@@ -1,6 +1,6 @@
 def decide_to_finish(state: RefactorState):
     """Router to decide if we loop back or end."""
-    if state["errors"] == "None" or state["iterations"] > 3:
+    if state.get("errors") is None or state.get("iterations", 0) > 3:
         return "end"
     return "rewrite"
 
