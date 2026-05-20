@@ -1,6 +1,12 @@
-workflow = StateGraph(MessageState)
+from langgraph.graph import END, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode, tools_condition
 
-def agent_node(state: MessageState):
+from .tools import llm_with_tools, tools
+
+
+workflow = StateGraph(MessagesState)
+
+def agent_node(state: MessagesState):
     print("AGENT THINKING T-T")
     response = llm_with_tools.invoke(state["messages"])
     return {"messages": [response]}
@@ -16,7 +22,7 @@ workflow.add_conditional_edges(
     tools_condition,
     {
         "tools": "tools",
-        "done": END,
+        "__end__": END,
     },
 )
 

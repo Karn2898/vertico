@@ -135,4 +135,4 @@ copilot-agent/
 ├── README.md
 └── langgraph.json                     # if using LangGraph deployment patterns 
 
-which type of code should be in each dir
+to run the test : /workspaces/vertico/vertico/bin/python test_agent.py
