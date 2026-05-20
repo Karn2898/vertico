@@ -1,0 +1,8 @@
+[project]
+name = "vertico-api-apps"
+version = "0.1.0"
+description = "API app package for Vertico (schemas subpackage)"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["."]
