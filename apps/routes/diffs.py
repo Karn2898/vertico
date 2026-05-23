@@ -149,7 +149,7 @@ def _unified_diff(original:str , refactored : str , filename : str ):
         original_lines,
         refactored_lines,
         fromfile=f"original/{filename}",
-        tofilef"refactored/{filename}",
+        tofile=f"refactored/{filename}",
         lineterm=""
     )
 
