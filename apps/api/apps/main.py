@@ -1,39 +1,46 @@
 from contextlib import asynccontextmanager
+import logging
+import os
+import time
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import time
-import logging
-import os
 
 from .routes import health, sessions, chat, diffs
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-
 )
-logger=logging.getLogger("copilot-api")
+logger = logging.getLogger("copilot-api")
 
-#lifespan
-has_key=bool(
-    os.environ.get("NVIDIA_API_KEY")
-)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting up...")
 
-if nothas_key:
-    logger.warning("no api key found")
-try:
-    from agent_core import graphs
-    graphs.workflow.compile()
-    logger.info("agent graph compiled OK")
-except Exception as e:
-    logger.error(f"Agent graph failed to compile:{e}")
+    has_key = bool(os.environ.get("NVIDIA_API_KEY"))
 
-yield
+    if not has_key:
+        logger.warning("no api key found")
+    try:
+        from agent_core import graphs
+        graphs.workflow.compile()
+        logger.info("agent graph compiled OK")
+    except Exception as e:
+        logger.error(f"Agent graph failed to compile:{e}")
 
-logger.info("shutting down")
+    from db.database import create_db_and_tables
+    create_db_and_tables()
+    logger.info("DB tables created")
 
-#close db connections here later
+    from db.vector.pgvector import enable_pgvector
+    enable_pgvector()
+    logger.info("pgvector enabled ok")
+
+    yield
+
+    logger.info("Shutting down...")
 
 app=FastAPI(
     title="vertico api",
@@ -51,11 +58,11 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def log_requests(request: Request , call_next):
+async def log_requests(request: Request, call_next):
     """Log every request with method, path, and response time."""
-    start=time.time()
+    start = time.time()
     response=await call_next(request)
-    duration = rounf((time.time()-start)*1000,2)
+    duration = round((time.time() - start) * 1000, 2)
 
     logger.info(
         f"{request.method} {request.url.path} "
@@ -82,10 +89,7 @@ async def catch_unhandled_errors(request:Request , call_next):
         )
 
 
-app.include_router(health.router)
-app.include_router(sessions.router)
-app.include_router(chat.router)
-app.include_router(diffs.router)
+
 
 @app.get("/")
 def root():
@@ -95,3 +99,8 @@ def root():
         "docs": "/docs",
         "health":"/health",
     }
+
+app.include_router(health.router)
+app.include_router(sessions.router)
+app.include_router(chat.router)
+app.include_router(diffs.router)
