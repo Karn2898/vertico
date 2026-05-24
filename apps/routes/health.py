@@ -5,6 +5,14 @@ import os
 
 router= APIRouter(prefix="/health",tags=["health"])
 
+try:
+    from db.database import engine
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    checks["db"]="ok"
+except Exception as e:
+    checks["db"]=f"error : {str(e)}"
+
 @router.get("/")
 def health_check():
     return{
