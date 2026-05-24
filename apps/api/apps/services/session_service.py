@@ -1,6 +1,13 @@
 from datetime import datetime
 from fastapi import HTTPException
 import uuid
+from fastapi import Depends
+from sqlmodel import Session
+from db.database import get_session
+from db.repositories import SessionRepo
+
+def get_repo(dbdb:Session=Depends(get_session)):
+    return SessionRepo(db)
 
 # Single source of truth — only this file touches the store directly
 _sessions: dict[str, dict] = {}
