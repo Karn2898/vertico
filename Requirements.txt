@@ -2,3 +2,6 @@ langchain
 langgraph
 langchain_core 
 langchain_google_genai
+fastapi
+sqlmodel
+uvicorn
