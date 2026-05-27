@@ -1,0 +1,13 @@
+[tool.poetry]
+name="vetico-rag"
+version="0.1.0"
+
+[tool.poetry.dependencies]
+python="^3.11"
+google-generativeai=""#gemini embeddings
+pgvector=""
+sqlmodel=""
+gitpython=""
+tree-sitter=""
+tiktoken=""
+vertico-db={path="../db , develop=True"}
