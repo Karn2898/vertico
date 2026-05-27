@@ -1,0 +1,223 @@
+copilot-agent/
+├── apps/
+│   ├── ide-extension/                 # VS Code extension / JetBrains plugin later
+│   │   ├── src/
+│   │   │   ├── extension.ts           # command registrations, LSP hooks, webview bridge
+│   │   │   ├── chat/
+│   │   │   ├── diff/
+│   │   │   ├── context/
+│   │   │   └── services/
+│   │   ├── webview/
+│   │   │   ├── src/                   # React/Tailwind UI
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   └── lib/
+│   │   └── package.json
+│   │
+│   ├── api/
+│   │   ├── app/
+│   │   │   ├── main.py                # FastAPI entry
+│   │   │   ├── routes/
+│   │   │   │   ├── chat.py
+│   │   │   │   ├── agent.py
+│   │   │   │   ├── sessions.py
+│   │   │   │   ├── diffs.py
+│   │   │   │   └── health.py
+│   │   │   ├── schemas/
+│   │   │   ├── services/
+│   │   │   ├── core/
+│   │   │   └── middleware/
+│   │   └── pyproject.toml
+│   │
+│   └── worker/
+│       ├── runner.py                  # async jobs, background graph runs
+│       ├── sandbox_manager.py
+│       └── task_handlers/
+│
+├── packages/
+│   ├── agent-core/
+│   │   ├── graphs/
+│   │   │   ├── coding_graph.py
+│   │   │   ├── planner_graph.py
+│   │   │   ├── bugfix_graph.py
+│   │   │   └── review_graph.py
+│   │   ├── nodes/
+│   │   │   ├── intake.py
+│   │   │   ├── planner.py
+│   │   │   ├── retriever.py
+│   │   │   ├── codegen.py
+│   │   │   ├── patcher.py
+│   │   │   ├── test_runner.py
+│   │   │   ├── linter.py
+│   │   │   ├── reflect.py
+│   │   │   └── finalize.py
+│   │   ├── edges/
+│   │   │   └── routing.py
+│   │   ├── state/
+│   │   │   ├── agent_state.py
+│   │   │   ├── session_state.py
+│   │   │   └── plan_state.py
+│   │   ├── prompts/
+│   │   ├── tools/
+│   │   │   ├── repo_search.py
+│   │   │   ├── read_file.py
+│   │   │   ├── write_file.py
+│   │   │   ├── grep_codebase.py
+│   │   │   ├── run_tests.py
+│   │   │   ├── run_linter.py
+│   │   │   ├── git_diff.py
+│   │   │   ├── symbols.py
+│   │   │   └── terminal.py
+│   │   ├── memory/
+│   │   │   ├── short_term.py
+│   │   │   ├── long_term.py
+│   │   │   └── summarizer.py
+│   │   └── evaluation/
+│   │       ├── offline_eval.py
+│   │       ├── traces.py
+│   │       └── metrics.py
+│   │
+│   ├── rag/
+│   │   ├── indexers/
+│   │   ├── embedders/
+│   │   ├── chunkers/
+│   │   ├── retrievers/
+│   │   └── rankers/
+│   │
+│   ├── sandbox/
+│   │   ├── docker/
+│   │   │   ├── base.Dockerfile
+│   │   │   ├── python.Dockerfile
+│   │   │   ├── node.Dockerfile
+│   │   │   └── runner.sh
+│   │   ├── executors/
+│   │   └── policies/
+│   │
+│   ├── db/
+│   │   ├── models/
+│   │   ├── migrations/
+│   │   ├── repositories/
+│   │   └── vector/
+│   │
+│   └── shared/
+│       ├── config/
+│       ├── logging/
+│       ├── security/
+│       └── utils/
+│
+├── infra/
+│   ├── docker/
+│   │   ├── docker-compose.yml
+│   │   ├── api.Dockerfile
+│   │   ├── worker.Dockerfile
+│   │   └── nginx.conf
+│   ├── k8s/                           # optional later
+│   └── terraform/                     # optional later
+│
+├── data/
+│   ├── repos/
+│   ├── indexes/
+│   └── traces/
+│
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   ├── evals/
+│   └── fixtures/
+│
+├── .env.example
+├── Makefile
+├── README.md
+└── langgraph.json                     # if using LangGraph deployment patterns 
+
+
+
+
+| Path / File                                    | What code goes here                                                                                                                                              | What should not go here                                                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| apps/ide-extension/src/extension.ts            | VS Code extension entrypoint, command registration, event listeners, activation logic, API/webview bridge, editor hooks. IDE_agent-1.ipynb                       | Business logic for agent reasoning, heavy LLM orchestration, database code. IDE_agent-1.ipynb                         |
+| apps/ide-extension/src/chat/                   | Chat panel controller code, message send/receive handlers, prompt dispatch from editor to backend. IDE_agent-1.ipynb                                             | Core graph logic or model/tool definitions. IDE_agent-1.ipynb                                                         |
+| apps/ide-extension/src/diff/                   | Diff rendering logic, patch preview, accept/reject change handlers. IDE_agent-1.ipynb                                                                            | Actual code patch generation logic. IDE_agent-1.ipynb                                                                 |
+| apps/ide-extension/src/context/                | Open-file extraction, symbol selection, cursor/selection capture, workspace metadata collection. IDE_agent-1.ipynb                                               | Embedding/indexing pipelines or backend retrieval logic. IDE_agent-1.ipynb                                            |
+| apps/ide-extension/src/services/               | Client-side services for calling API, auth token forwarding, request formatting, telemetry helpers. IDE_agent-1.ipynb                                            | Editor UI components and backend agent implementation. IDE_agent-1.ipynb                                              |
+| apps/ide-extension/webview/src/                | React app entry, routing, layout for chat/diff/settings UI. IDE_agent-1.ipynb                                                                                    | VS Code extension activation code or backend APIs. IDE_agent-1.ipynb                                                  |
+| apps/ide-extension/webview/components/         | Reusable UI components like chat bubbles, tool cards, diff panels, buttons, loaders. IDE_agent-1.ipynb                                                           | State orchestration for agent execution. IDE_agent-1.ipynb                                                            |
+| apps/ide-extension/webview/pages/              | Page-level UI such as chat page, history page, settings page. IDE_agent-1.ipynb                                                                                  | Shared low-level UI primitives. IDE_agent-1.ipynb                                                                     |
+| apps/ide-extension/webview/lib/                | Frontend utilities, API client helpers, formatting helpers, local UI state helpers. IDE_agent-1.ipynb                                                            | Core backend services or extension entry logic. IDE_agent-1.ipynb                                                     |
+| apps/api/app/main.py                           | FastAPI app creation, router registration, startup/shutdown hooks, middleware mounting. IDE_agent-1.ipynb                                                        | Actual route business logic or graph node definitions. IDE_agent-1.ipynb                                              |
+| apps/api/app/routes/chat.py                    | Endpoints for normal chat requests and responses. IDE_agent-1.ipynb                                                                                              | Shared service logic or database model definitions. IDE_agent-1.ipynb                                                 |
+| apps/api/app/routes/agent.py                   | Endpoints to start agent runs, invoke graphs, submit coding tasks. IDE_agent-1.ipynb                                                                             | Long-running execution code itself. IDE_agent-1.ipynb                                                                 |
+| apps/api/app/routes/sessions.py                | Session CRUD APIs, restore conversation/session state APIs. IDE_agent-1.ipynb                                                                                    | Session storage implementation details. IDE_agent-1.ipynb                                                             |
+| apps/api/app/routes/diffs.py                   | Endpoints for patch preview, apply/reject changes, diff retrieval. IDE_agent-1.ipynb                                                                             | Diff generation engine. IDE_agent-1.ipynb                                                                             |
+| apps/api/app/routes/health.py                  | Health check, readiness, liveness endpoints. IDE_agent-1.ipynb                                                                                                   | Any business logic. IDE_agent-1.ipynb                                                                                 |
+| apps/api/app/schemas/                          | Pydantic request/response models, validation objects, DTOs. IDE_agent-1.ipynb                                                                                    | Database ORM models or graph state objects unless intentionally reused. IDE_agent-1.ipynb                             |
+| apps/api/app/services/                         | API-layer business services, orchestration between routes, worker, DB, and agent-core. IDE_agent-1.ipynb                                                         | Raw route declarations or low-level DB table definitions. IDE_agent-1.ipynb                                           |
+| apps/api/app/core/                             | Config loading, model/provider initialization, dependency injection, app constants. This is where the notebook’s inline LLM setup should move. IDE_agent-1.ipynb | Endpoint definitions or graph node behavior. IDE_agent-1.ipynb                                                        |
+| apps/api/app/middleware/                       | Auth middleware, logging middleware, error handling, request tracing. IDE_agent-1.ipynb                                                                          | Application business logic. IDE_agent-1.ipynb                                                                         |
+| apps/worker/runner.py                          | Worker entrypoint, job polling, async task execution startup. IDE_agent-1.ipynb                                                                                  | Graph definitions or HTTP route code. IDE_agent-1.ipynb                                                               |
+| apps/worker/sandbox_manager.py                 | Sandbox lifecycle handling, container/session allocation, cleanup, execution environment control. IDE_agent-1.ipynb                                              | Code review/refactor reasoning logic. IDE_agent-1.ipynb                                                               |
+| apps/worker/task_handlers/                     | Concrete handlers for queued tasks like run-agent, run-tests, index-repo, evaluate-run. IDE_agent-1.ipynb                                                        | Generic reusable core tools that belong in packages. IDE_agent-1.ipynb                                                |
+| packages/agent-core/graphs/coding_graph.py     | Full coding workflow graph: planning, retrieving context, generating edits, validating, finalizing. IDE_agent-1.ipynb                                            | Reusable single-step node implementations. IDE_agent-1.ipynb                                                          |
+| packages/agent-core/graphs/planner_graph.py    | Planning-only graph for task decomposition and execution strategy. IDE_agent-1.ipynb                                                                             | Low-level tool code. IDE_agent-1.ipynb                                                                                |
+| packages/agent-core/graphs/bugfix_graph.py     | Specialized bug-fix workflow graph. IDE_agent-1.ipynb                                                                                                            | Generic API schema code. IDE_agent-1.ipynb                                                                            |
+| packages/agent-core/graphs/review_graph.py     | Code review or refactor workflow graph. Your notebook refactor flow belongs conceptually here. IDE_agent-1.ipynb                                                 | Editor UI or HTTP route code. IDE_agent-1.ipynb                                                                       |
+| packages/agent-core/nodes/intake.py            | Normalize user request, parse task intent, collect initial context into graph state. IDE_agent-1.ipynb                                                           | Final response formatting only. IDE_agent-1.ipynb                                                                     |
+| packages/agent-core/nodes/planner.py           | Generate step-by-step plan, choose tools/strategy. IDE_agent-1.ipynb                                                                                             | Raw tool execution functions. IDE_agent-1.ipynb                                                                       |
+| packages/agent-core/nodes/retriever.py         | Fetch repo context, relevant files, symbols, chunks, memory, and RAG hits. IDE_agent-1.ipynb                                                                     | Vector DB implementation details. IDE_agent-1.ipynb                                                                   |
+| packages/agent-core/nodes/codegen.py           | Generate new code or candidate code edits. IDE_agent-1.ipynb                                                                                                     | Direct file writing side effects unless explicitly wrapped. IDE_agent-1.ipynb                                         |
+| packages/agent-core/nodes/patcher.py           | Convert generated intent into patch/diff operations, apply structured modifications. This is close to your notebook refactorer behavior. IDE_agent-1.ipynb       | Webview diff rendering. IDE_agent-1.ipynb                                                                             |
+| packages/agent-core/nodes/test_runner.py       | Call test execution tools and interpret test results. IDE_agent-1.ipynb                                                                                          | The underlying shell/python execution implementation. IDE_agent-1.ipynb                                               |
+| packages/agent-core/nodes/linter.py            | Lint/syntax validation node. Your notebook codelinter maps here. IDE_agent-1.ipynb                                                                               | Tool registration itself. IDE_agent-1.ipynb                                                                           |
+| packages/agent-core/nodes/reflect.py           | Self-critique, failure analysis, retry decision preparation. IDE_agent-1.ipynb                                                                                   | Route-layer retry handling. IDE_agent-1.ipynb                                                                         |
+| packages/agent-core/nodes/finalize.py          | Build final structured output: patches, explanation, next actions, status. IDE_agent-1.ipynb                                                                     | UI rendering logic. IDE_agent-1.ipynb                                                                                 |
+| packages/agent-core/edges/routing.py           | Conditional edge functions, retry/finish decisions. Your notebook decide_to_finish belongs here. IDE_agent-1.ipynb                                               | Node business logic or tool code. IDE_agent-1.ipynb                                                                   |
+| packages/agent-core/state/agent_state.py       | Main graph state schema shared across coding workflows. IDE_agent-1.ipynb                                                                                        | API request schemas for FastAPI. IDE_agent-1.ipynb                                                                    |
+| packages/agent-core/state/session_state.py     | Persistent session-related graph memory/state model. IDE_agent-1.ipynb                                                                                           | DB table ORM unless intentionally mirrored. IDE_agent-1.ipynb                                                         |
+| packages/agent-core/state/plan_state.py        | Planning-specific state fields like subtasks, assumptions, current step. IDE_agent-1.ipynb                                                                       | Tool execution code. IDE_agent-1.ipynb                                                                                |
+| packages/agent-core/prompts/                   | System prompts, role prompts, task templates, retry prompts, review prompts. IDE_agent-1.ipynb                                                                   | Python business logic or secret keys. IDE_agent-1.ipynb                                                               |
+| packages/agent-core/tools/repo_search.py       | Tool wrappers for searching the repo structure/content. IDE_agent-1.ipynb                                                                                        | Retrieval ranking algorithm internals if they are shared RAG components. IDE_agent-1.ipynb                            |
+| packages/agent-core/tools/read_file.py         | Safe file reading helpers/tool definitions. IDE_agent-1.ipynb                                                                                                    | Direct editor-side context capture. IDE_agent-1.ipynb                                                                 |
+| packages/agent-core/tools/write_file.py        | Safe file writing/apply-edit tool. Your notebook writepythonfile maps here. IDE_agent-1.ipynb                                                                    | High-level patch planning. IDE_agent-1.ipynb                                                                          |
+| packages/agent-core/tools/grep_codebase.py     | Pattern matching, symbol/name search, text grep wrappers. IDE_agent-1.ipynb                                                                                      | UI search functionality. IDE_agent-1.ipynb                                                                            |
+| packages/agent-core/tools/run_tests.py         | Tool wrapper to run project tests and return parsed results. IDE_agent-1.ipynb                                                                                   | Test assertions themselves. IDE_agent-1.ipynb                                                                         |
+| packages/agent-core/tools/run_linter.py        | Tool wrapper for flake8/ruff/eslint/mypy etc. IDE_agent-1.ipynb                                                                                                  | Retry logic based on lint results. IDE_agent-1.ipynb                                                                  |
+| packages/agent-core/tools/git_diff.py          | Tool to compute staged/generated diffs and summaries. IDE_agent-1.ipynb                                                                                          | Frontend diff visualization. IDE_agent-1.ipynb                                                                        |
+| packages/agent-core/tools/symbols.py           | Symbol extraction, class/function lookup, reference navigation wrappers. IDE_agent-1.ipynb                                                                       | Full AST engine implementation if shared elsewhere. IDE_agent-1.ipynb                                                 |
+| packages/agent-core/tools/terminal.py          | Controlled shell/terminal execution tool. Your notebook file execution tool maps conceptually here. IDE_agent-1.ipynb                                            | Worker queue logic. IDE_agent-1.ipynb                                                                                 |
+| packages/agent-core/memory/short_term.py       | Current-run memory, rolling summary, recent interaction context. IDE_agent-1.ipynb                                                                               | Long-term embedding storage mechanics. IDE_agent-1.ipynb                                                              |
+| packages/agent-core/memory/long_term.py        | Persisted user/repo/task memory interfaces and retrieval hooks. IDE_agent-1.ipynb                                                                                | Immediate node-local temporary variables. IDE_agent-1.ipynb                                                           |
+| packages/agent-core/memory/summarizer.py       | Summarization logic to compress long histories and tool traces. IDE_agent-1.ipynb                                                                                | Session CRUD API handlers. IDE_agent-1.ipynb                                                                          |
+| packages/agent-core/evaluation/offline_eval.py | Benchmark/eval pipelines over saved tasks and outputs. IDE_agent-1.ipynb                                                                                         | Online production inference code. IDE_agent-1.ipynb                                                                   |
+| packages/agent-core/evaluation/traces.py       | Trace collection, run logs, structured reasoning metadata. IDE_agent-1.ipynb                                                                                     | UI analytics dashboards. IDE_agent-1.ipynb                                                                            |
+| packages/agent-core/evaluation/metrics.py      | Scoring functions, pass/fail metrics, latency/quality measures. IDE_agent-1.ipynb                                                                                | Business route logic. IDE_agent-1.ipynb                                                                               |
+| packages/rag/indexers/                         | Repo/document indexing pipelines and ingestion jobs. IDE_agent-1.ipynb                                                                                           | Query-time route code. IDE_agent-1.ipynb                                                                              |
+| packages/rag/embedders/                        | Embedding model wrappers and embedding generation logic. IDE_agent-1.ipynb                                                                                       | API endpoint definitions. IDE_agent-1.ipynb                                                                           |
+| packages/rag/chunkers/                         | File/document chunking strategies for code/docs. IDE_agent-1.ipynb                                                                                               | Final retrieval orchestration node code. IDE_agent-1.ipynb                                                            |
+| packages/rag/retrievers/                       | Search and candidate retrieval strategies. IDE_agent-1.ipynb                                                                                                     | UI context collectors. IDE_agent-1.ipynb                                                                              |
+| packages/rag/rankers/                          | Re-ranking logic for retrieved chunks/files. IDE_agent-1.ipynb                                                                                                   | Storage-layer vector implementation. IDE_agent-1.ipynb                                                                |
+| packages/sandbox/docker/                       | Dockerfiles, shell scripts, execution image definitions. IDE_agent-1.ipynb                                                                                       | Python worker orchestration logic. IDE_agent-1.ipynb                                                                  |
+| packages/sandbox/executors/                    | Code execution engines for Python/Node/etc. inside sandbox. IDE_agent-1.ipynb                                                                                    | High-level agent prompts. IDE_agent-1.ipynb                                                                           |
+| packages/sandbox/policies/                     | Safety rules, filesystem/network/time/resource limits. IDE_agent-1.ipynb                                                                                         | Concrete API routes. IDE_agent-1.ipynb                                                                                |
+| packages/db/models/                            | ORM models, table definitions, database entities. IDE_agent-1.ipynb                                                                                              | Pydantic API response models unless deliberately mirrored. IDE_agent-1.ipynb                                          |
+| packages/db/migrations/                        | Alembic or migration files for schema changes. IDE_agent-1.ipynb                                                                                                 | Repository business logic. IDE_agent-1.ipynb                                                                          |
+| packages/db/repositories/                      | Data access layer, CRUD/query abstractions. IDE_agent-1.ipynb                                                                                                    | HTTP route code. IDE_agent-1.ipynb                                                                                    |
+| packages/db/vector/                            | Vector store adapters, vector index operations, search helpers. IDE_agent-1.ipynb                                                                                | Graph node retrieval flow. IDE_agent-1.ipynb                                                                          |
+| packages/shared/config/                        | App-wide settings, env loading, constants. This should replace notebook-level inline env setup. IDE_agent-1.ipynb                                                | App-specific route logic. IDE_agent-1.ipynb                                                                           |
+| packages/shared/logging/                       | Shared log formatters, trace IDs, logger factories. IDE_agent-1.ipynb                                                                                            | Middleware-specific request handling. IDE_agent-1.ipynb                                                               |
+| packages/shared/security/                      | Auth helpers, secret access wrappers, permission checks, input safety helpers. IDE_agent-1.ipynb                                                                 | UI auth pages. IDE_agent-1.ipynb                                                                                      |
+| packages/shared/utils/                         | Generic helpers used across apps/packages. IDE_agent-1.ipynb                                                                                                     | Domain-specific agent logic. IDE_agent-1.ipynb                                                                        |
+| infra/docker/docker-compose.yml                | Local multi-service orchestration for api, worker, db, redis, vector db, nginx. IDE_agent-1.ipynb                                                                | App code. IDE_agent-1.ipynb                                                                                           |
+| infra/docker/api.Dockerfile                    | API container build instructions. IDE_agent-1.ipynb                                                                                                              | Python runtime logic. IDE_agent-1.ipynb                                                                               |
+| infra/docker/worker.Dockerfile                 | Worker container build instructions. IDE_agent-1.ipynb                                                                                                           | Job scheduling code. IDE_agent-1.ipynb                                                                                |
+| infra/docker/nginx.conf                        | Reverse proxy and routing config. IDE_agent-1.ipynb                                                                                                              | Backend business logic. IDE_agent-1.ipynb                                                                             |
+| data/repos/                                    | Cloned repos, temp working repos, sandboxed code copies. IDE_agent-1.ipynb                                                                                       | Source code that should be version-controlled. IDE_agent-1.ipynb                                                      |
+| data/indexes/                                  | Built embedding/vector/search indexes. IDE_agent-1.ipynb                                                                                                         | App logic. IDE_agent-1.ipynb                                                                                          |
+| data/traces/                                   | Saved execution traces and evaluation artifacts. IDE_agent-1.ipynb                                                                                               | Source modules. IDE_agent-1.ipynb                                                                                     |
+| tests/unit/                                    | Small isolated tests for functions, nodes, utilities, schemas. IDE_agent-1.ipynb                                                                                 | End-to-end multi-service tests. IDE_agent-1.ipynb                                                                     |
+| tests/integration/                             | API + DB + worker + tool interaction tests. IDE_agent-1.ipynb                                                                                                    | Tiny pure-function tests. IDE_agent-1.ipynb                                                                           |
+| tests/evals/                                   | Agent benchmark tasks, expected behavior checks, quality eval harnesses. IDE_agent-1.ipynb                                                                       | Production code. IDE_agent-1.ipynb                                                                                    |
+| tests/fixtures/                                | Sample files, fake repos, mock API responses, canned prompts. IDE_agent-1.ipynb                                                                                  | Assertions or business logic. IDE_agent-1.ipynb                                                                       |
+| .env.example                                   | List of required environment variables and sample placeholders. IDE_agent-1.ipynb                                                                                | Real API keys. Your notebook currently exposes a hardcoded key, which should never be kept in code. IDE_agent-1.ipynb |
+| Makefile                                       | Dev commands like run-api, run-worker, test, lint, format, compose-up. IDE_agent-1.ipynb                                                                         | Business logic or config values that belong in env files. IDE_agent-1.ipynb                                           |
+| README.md                                      | Project overview, setup, architecture explanation, run instructions. IDE_agent-1.ipynb                                                                           | Secrets or detailed internal code that belongs in docs folders. IDE_agent-1.ipynb                                     |
+| langgraph.json                                 | LangGraph deployment/runtime configuration and graph registration metadata. IDE_agent-1.ipynb                                                                    | Actual Python graph logic. IDE_agent-1.ipynb                                                                          |
