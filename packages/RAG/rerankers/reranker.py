@@ -13,7 +13,7 @@ def rerank(query: str , results: list[Any], top_k : int=5):
         if row.chunk_name:
             name_terms=set(row.chunk_name.lower().split())
             overlap=query_terms& name_terms
-            bonus+=len(overap)*0.05
+            bonus+=len(overlap)*0.05
 
         path_terms=set(row.file_path.lower().replace ("/","").replace("_","").split())
         path_overlap=query_terms & path_terms
