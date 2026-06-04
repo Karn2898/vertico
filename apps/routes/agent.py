@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException
-import asyncio
+from fastapi import APIRouter, HTTPException, Depends
 import sys
 from pathlib import Path
 
 # Prefer the shared session store and agent graphs
 from .session import sessions, _require
-from rag.indexers.repo_indexer import index_repo
+from celery.result import AsyncResult
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -22,6 +21,10 @@ except Exception:
 
 from rag.indexers.repo_indexer import index_repo
 
+# Celery task entrypoints
+from apps.worker.runner import run_refactor, run_bugfix, run_review
+
+
 @router.post("/index")
 def index_repository(repo_path: str, force: bool = False):
     """
@@ -34,25 +37,46 @@ def index_repository(repo_path: str, force: bool = False):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.post("/run/{session_id}")
-async def run_agent(session_id: str):
+def run_agent(session_id: str):
+    """
+    Enqueue an agent graph run.
+    Returns immediately with a task_id to poll.
+    """
     _require(session_id)
     session = sessions[session_id]
 
-    sessions[session_id]["status"] = "running"
+    if session.get("status") == "running":
+        raise HTTPException(status_code=409, detail="Session already running")
 
-    try:
-        app = graphs.workflow.compile()
-        # Run the potentially blocking invoke in a thread
-        result = await asyncio.to_thread(app.invoke, session["agent_state"])
+    # Dispatch to correct queue
+    graph = ("refactor" if "graph" not in session else session.get("graph"))
+    # If caller provided graph, prefer that — but keep backwards compatibility
+    # Default to 'refactor'
+    # Here we expect the client to POST to /run/{session_id}?graph=bugfix with body for bugfix
+    # For simplicity, use session-stored graph if present.
 
-        # Merge result into stored state
-        sessions[session_id]["agent_state"].update(result or {})
-        sessions[session_id]["status"] = "done"
-        return {"session_id": session_id, "status": "done", "result_keys": sorted((result or {}).keys())}
+    # TODO: allow passing parameters (e.g. error_message) via request body/params
+    # For now, enqueue a refactor by default.
+    task = run_refactor.delay(session_id)
 
-    except Exception as exc:
-        err = str(exc)
-        sessions[session_id]["agent_state"]["errors"] = err
-        sessions[session_id]["status"] = "failed"
-        raise HTTPException(status_code=500, detail=f"agent run failed: {err}")
+    # mark queued
+    sessions[session_id]["status"] = "queued"
+
+    return {"session_id": session_id, "task_id": task.id, "status": "queued", "graph": "refactor"}
+
+
+@router.get("/task/{task_id}")
+def get_task_status(task_id: str):
+    """
+    Poll task status by Celery task_id.
+    States: PENDING → STARTED → SUCCESS | FAILURE
+    """
+    result = AsyncResult(task_id)
+    return {
+        "task_id": task_id,
+        "state": result.state,
+        "result": result.result if result.ready() else None,
+        "traceback": result.traceback if result.failed() else None,
+    }
