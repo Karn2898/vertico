@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: vertico-api-apps
+Version: 0.1.0
+Summary: API app package for Vertico (schemas subpackage)
+Requires-Python: >=3.10

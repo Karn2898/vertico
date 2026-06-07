@@ -42,7 +42,11 @@ def _load_env_file(repo_root: Path) -> None:
 
 
 def _has_api_key() -> bool:
-    return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    return bool(
+        os.environ.get("NVIDIA_API_KEY")
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
+    )
 
 
 def main() -> int:
@@ -76,7 +80,10 @@ def main() -> int:
     print("Lint result:", lint_result)
 
     if not _has_api_key():
-        print("[2/2] Skipping full graph: set GOOGLE_API_KEY or GEMINI_API_KEY to run reviewer/refactorer nodes.")
+        print(
+            "[2/2] Skipping full graph: set NVIDIA_API_KEY, GOOGLE_API_KEY or GEMINI_API_KEY to run reviewer/refactorer nodes."
+        )
+        return 0
         return 0
 
     print("[2/2] Running full graph...")
@@ -86,7 +93,9 @@ def main() -> int:
     except Exception as exc:
         message = str(exc)
         if "503" in message and "UNAVAILABLE" in message:
-            print("Full graph failed: Gemini service is temporarily overloaded (503 UNAVAILABLE).")
+            print(
+                "Full graph failed: upstream generative service is temporarily overloaded (503 UNAVAILABLE)."
+            )
             print("Retry in a few moments, or switch to a different model in agent_core/config.py.")
             return 1
         print(f"Full graph failed: {exc}")
