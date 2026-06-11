@@ -1,5 +1,3 @@
-
-
 import os
 import subprocess
 import logging
@@ -39,7 +37,7 @@ class PythonExecutor(BaseExecutor):
     def _run_sandboxed(self, code: str, timeout: int) -> ExecutionResult:
         try:
             output = self.client.containers.run(
-                image=SANDBOX_IMAGE,
+                image=SANDBOX_IMAGE,   
                 environment={
                     "SANDBOX_CODE": code,
                     "SANDBOX_LANG": "python",
