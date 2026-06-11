@@ -78,3 +78,11 @@ def graph_check():
             "error":str(e),
             "timestamp":datetime.utcnow().isoformat(),
         }
+    
+try:
+    from sandbox.executors.python_executor import PythonExecutor
+    ex = PythonExecutor()
+    result = ex.run("print('ok')", timeout=5)
+    checks["sandbox_python"] = "ok" if result.success else f"error: {result.stderr}"
+except Exception as e:
+    checks["sandbox_python"] = f"error: {str(e)}"
