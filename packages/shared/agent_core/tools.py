@@ -2,6 +2,14 @@ import subprocess
 
 from .config import llm, tool
 
+try:
+    from sandbox.executors.python_executor import PythonExecutor
+except Exception:
+    PythonExecutor = None
+
+
+_python_executor = PythonExecutor() if PythonExecutor is not None else None
+
 
 @tool
 def write_python_file(filename: str, code: str):
@@ -27,6 +35,25 @@ def execute_python_file(filename: str):
     Returns the output or error. Use this to verify the refactored code runs.
     """
     try:
+        with open(filename, "r", encoding="utf-8") as file:
+            code = file.read()
+    except Exception as e:
+        return f"failed to run : {str(e)}"
+
+    if _python_executor is not None:
+        try:
+            result = _python_executor.run(code, timeout=5)
+            mode = "sandboxed" if result.sandbox_enabled else "dev-subprocess"
+
+            if result.timed_out:
+                return f"[{mode}] Execution timed out"
+            if result.success:
+                return f"[{mode}] Success:\n{result.stdout}"
+            return f"[{mode}] Error (exit {result.exit_code}):\n{result.stderr}"
+        except Exception:
+            pass
+
+    try:
         result = subprocess.run(
             ["python3", filename],
             capture_output=True,
@@ -35,9 +62,8 @@ def execute_python_file(filename: str):
         )
 
         if result.returncode == 0:
-            return f"execution success :\n{result.stdout}"
-        else:
-            return f"execution error : \n{result.stderr}"
+            return f"[dev-subprocess] Success:\n{result.stdout}"
+        return f"[dev-subprocess] Error (exit {result.returncode}):\n{result.stderr}"
     except Exception as e:
         return f"failed to run : {str(e)}"
 

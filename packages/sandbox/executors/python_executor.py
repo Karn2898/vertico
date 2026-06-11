@@ -16,10 +16,7 @@ SANDBOX_ENABLED = os.environ.get("SANDBOX_ENABLED", "false").lower() == "true"
 
 
 class PythonExecutor(BaseExecutor):
-    """
-    In prod (SANDBOX_ENABLED=true): runs code in isolated Docker container.
-    In dev (SANDBOX_ENABLED=false): runs code in subprocess with timeout.
-    """
+  
 
     def __init__(self):
         self.sandbox_enabled = SANDBOX_ENABLED
@@ -38,7 +35,6 @@ class PythonExecutor(BaseExecutor):
             return self._run_sandboxed(code, timeout)
         return self._run_subprocess(code, timeout)
 
-    # --- Sandboxed (prod) ---
 
     def _run_sandboxed(self, code: str, timeout: int) -> ExecutionResult:
         try:

@@ -54,3 +54,36 @@ worker-dev:
 flower:
 	# Celery monitoring dashboard at http://localhost:5555
 	celery -A apps.worker.celery_app flower --port=5555
+
+# Sandbox commands
+
+sandbox-build:
+	docker build -f packages/sandbox/docker/base.Dockerfile \
+		-t copilot-sandbox-base:latest .
+	docker build -f packages/sandbox/docker/python.Dockerfile \
+		-t copilot-sandbox-python:latest .
+	docker build -f packages/sandbox/docker/node.Dockerfile \
+		-t copilot-sandbox-node:latest .
+
+sandbox-test-python:
+	docker run --rm \
+		-e SANDBOX_CODE="print('hello from sandbox')" \
+		-e SANDBOX_LANG="python" \
+		--network none \
+		--memory 128m \
+		--read-only \
+		copilot-sandbox-python:latest
+
+sandbox-test-node:
+	docker run --rm \
+		-e SANDBOX_CODE="console.log('hello from node sandbox')" \
+		-e SANDBOX_LANG="node" \
+		--network none \
+		--memory 128m \
+		--read-only \
+		copilot-sandbox-node:latest
+
+sandbox-clean:
+	docker rmi copilot-sandbox-python:latest \
+		copilot-sandbox-node:latest \
+		copilot-sandbox-base:latest 2>/dev/null || true
