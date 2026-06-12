@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext){
     
 }),
 
- vscode.commands.registerCommand("copilot.reviewFile", async () => {
+ vscode.commands.registerCommand("Vertico.reviewFile", async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
       const code = editor.document.getText();
@@ -50,4 +50,38 @@ export function activate(context: vscode.ExtensionContext){
       const session = await sessionManager.createSession(filename, code);
       ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
       await sessionManager.runGraph(session.session_id, "review");
+    }),
+
+    vscode.commands.registerCommand("Vertico.fixbug",async () =>{
+        const editor =vscode.window.activeTextEditor;
+        if (!editor) return ;
+        const errorMsg =await vsode.window.showInputBox({
+            prompt: "Describe the bug you want to fix",
+        })
+        if (!errorMsg) return ;
+        const code =editor.document.getText();
+        const filename =editor.document.fileName;
+        const session = await sessionManager.createSession(filename, code);
+        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        await sessionManager.runGraph(session.session_id, "fixbug", errorMsg);
+    }),
+    vscode.commands.registerCommand("copilot.indexRepo", async () => {
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage("No workspace open");
+        return;
+      }
+      await vscode.window.withProgress(
+        {location:vscode.ProgressLocation.Notification , title: "Vertoco: Indexing repo ..."};
+        async ()=>{
+            await api.indexRepo(workspaceRoot);
+            vscode.window.showInformationMessage("repository indexed successfully ");
+        }
+      );
+    }),
+
+    vscode.commands.registerCommand("copilot.acceptDiff", async () => {
+      const sessionId = sessionManager.currentSessionId;
+      if (!sessionId) return;
+      await diffViewer.accept(sessionId);
     }),
