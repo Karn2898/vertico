@@ -85,3 +85,26 @@ export function activate(context: vscode.ExtensionContext){
       if (!sessionId) return;
       await diffViewer.accept(sessionId);
     }),
+
+    vscode.commands.registerCommand("copilot.rejectDiff", async () => {
+      const sessionId = sessionManager.currentSessionId;
+      if (!sessionId) return;
+      await diffViewer.reject(sessionId);
+    })
+
+);
+
+#inline suggesions
+
+const inlineProvider=new InlineProvider(api , sessionManager);
+context.subscriptions.push(
+    vscode.Languages.registerInlineCompletionItemProvider(
+        {pattern:"**"},
+        inlineProvider
+    )
+);
+}
+
+export function deactivate(){
+    sessionManager?.cleanup();
+}
