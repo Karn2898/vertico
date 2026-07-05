@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ChatWindow } from "./components/ChatWindow";
 import { DiffPanel } from "./components/DiffPanel";
-import { FileTree } from "./components/FileTree";
-
-type Tab = "chat" | "diff" | "context";
-
-const vscode = (window as any).acquireVsCodeApi?.() ?? {
+import { FileTree } from "./components/FileTree";1
   postMessage: console.log
 };
 
