@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
   const diffViewer = new DiffViewer(api, sessionManager);
 
   vscode.commands.registerCommand("vertico.startChat", () => {
-    ChatPanel.createOrShow(context.extensionUri, sessionManager, contextCollector);
+    ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
   });
 
   vscode.commands.registerCommand("copilot.refactorFile", async () => {
@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
       { location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." },
       async () => {
         const session = await sessionManager.createSession(filename, code);
-        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector, session.session_id);
+        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
         await sessionManager.runGraph(session.session_id, "refactor");
       }
     );
