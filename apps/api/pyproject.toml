@@ -6,3 +6,9 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+pytest-asyncio = "*"
+pytest-mock = "*"
