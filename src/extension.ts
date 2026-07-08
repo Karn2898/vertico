@@ -38,6 +38,8 @@ export function activate(context: vscode.ExtensionContext) {
     );
   });
 
+
+
   vscode.commands.registerCommand("Vertico.reviewFile", async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
