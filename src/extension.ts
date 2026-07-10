@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
   });
 
-  vscode.commands.registerCommand("copilot.refactorFile", async () => {
+  vscode.commands.registerCommand("vertico.refactorFile", async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
     const code = editor.document.getText();
