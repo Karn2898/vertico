@@ -28,7 +28,7 @@ class ChatRepo:
 
     def get_history(
         self,
-        session_id:str,
+        session_id: str,
         limit:int=50,
 
     )->list[MessageModel]:
@@ -43,6 +43,6 @@ class ChatRepo:
     def clear(self, session_id:str):
        messages=self.get_history(session_id , limit=10000)
        for msg in messages:
-          self.session.delete(msg)
-         self.session.commit()
-         return len(messages)
+        self.session.delete(msg)
+        self.session.commit()
+        return len(messages)
