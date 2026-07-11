@@ -8,12 +8,12 @@ class SessionRepo:
     def __init__(self, session:Session):
         self.session=session
 
-        def create(
+    def create(
             self,
             filename: str,
             original_code:str,
 
-        )
+                 ):
         db_session=SessionModel(
             filename=filename,
             original_code=original_code,
@@ -45,7 +45,7 @@ class SessionRepo:
         erors:Optional[str]=None,
         iterations:Optional[str]=None,
 
-    ):
+         ):
     db_session=self._require(session_id)
 
     if refactored_code is not None:
