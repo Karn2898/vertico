@@ -1,3 +1,4 @@
+from google.auth import default
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
@@ -16,5 +17,5 @@ class DiffModel(SQLModel , table=True):
     original_code:str
     refactored_code:str
     unified_diff:str
-    lines_added:int=Field(default_factory=fatetime.utcnow)
+    lines_added:int=Field(default_factory=default=datetime.utcnow)
     resolved_at: Optional[datetime]=Field(default=None)
