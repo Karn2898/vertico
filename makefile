@@ -87,3 +87,27 @@ sandbox-clean:
 	docker rmi copilot-sandbox-python:latest \
 		copilot-sandbox-node:latest \
 		copilot-sandbox-base:latest 2>/dev/null || true
+
+# IDE Extension
+
+ext-install:
+	cd apps/ide-extension && npm install
+	cd apps/ide-extension/webview && npm install
+
+ext-build:
+	cd apps/ide-extension/webview && npm run build
+	cd apps/ide-extension && npm run build
+
+ext-dev:
+	cd apps/ide-extension/webview && npm run dev &
+	cd apps/ide-extension && npm run dev
+
+ext-package:
+	cd apps/ide-extension && npx vsce package
+
+# JetBrains
+jb-build:
+	cd apps/ide-extension/jetbrains && ./gradlew buildPlugin
+
+jb-run:
+	cd apps/ide-extension/jetbrains && ./gradlew runIde
