@@ -46,14 +46,14 @@ class SessionRepo:
         iterations:Optional[str]=None,
 
     ):
-    db_session=sef._require(session_id)
+    db_session=self._require(session_id)
 
     if refactored_code is not None:
         db_session.refactored_code=refactored_code
     if review_notes is not None:
         db_session.review_notes=review_notes
     if errors is not None:
-        db_session.errros=errors\
+        db_session.errros=errors
     if iterations is not None:
         db_session.iteraations =iterations
     if status is not None:
@@ -79,19 +79,19 @@ def accept_diff(self , session_id :str):
 
 def reject_diff(self, session_id:str):
     db_session = self._require(session_id)
-        db_session.refactored_code = db_session.original_code
-        db_session.review_notes = ""
-        db_session.errors = None
-        db_session.iterations = 0
-        db_session.status = "idle"
-        self.session.add(db_session)
-        self.session.commit()
-        self.session.refresh(db_session)
-        return db_session
+    db_session.refactored_code = db_session.original_code
+    db_session.review_notes = ""
+    db_session.errors = None
+    db_session.iterations = 0
+    db_session.status = "idle"
+    self.session.add(db_session)
+    self.session.commit()
+    self.session.refresh(db_session)
+    return db_session
 
 def delete(self, session_id: str ):
     db_session=self._require(session_id)
-    selfsession.delete(db_session)
+    self.session.delete(db_session)
     self.session.commit()
     return db_session
 
