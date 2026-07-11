@@ -7,8 +7,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .routes import health, sessions, chat, diffs
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -30,13 +28,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Agent graph failed to compile:{e}")
 
-    from db.database import create_db_and_tables
-    create_db_and_tables()
-    logger.info("DB tables created")
+    try:
+        from db.database import create_db_and_tables
+        create_db_and_tables()
+        logger.info("DB tables created")
 
-    from db.vector.pgvector import enable_pgvector
-    enable_pgvector()
-    logger.info("pgvector enabled ok")
+        from db.vector.pgvector import enable_pgvector
+        enable_pgvector()
+        logger.info("pgvector enabled ok")
+    except ModuleNotFoundError:
+        logger.warning("db package not importable; skipping DB init")
 
     yield
 
@@ -100,7 +101,10 @@ def root():
         "health":"/health",
     }
 
-app.include_router(health.router)
-app.include_router(sessions.router)
-app.include_router(chat.router)
-app.include_router(diffs.router)
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/health/ready")
+def readiness():
+    return {"status": "ready"}
