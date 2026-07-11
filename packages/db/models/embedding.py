@@ -23,10 +23,8 @@ class EmbeddingModel(SQLModel , table=True):
     start_line:int
     end_line:int
 
-    #the vecctor
-
     embedding:list[float]=Field(
-        sa_column=Column(vector(768))
+        sa_column=Column(Vector(768))
     )
 
     indexed_at:datetime=Field(default_factory =datetime.utcnow)
