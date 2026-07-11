@@ -31,10 +31,7 @@ class EmbeddingRepo:
             top_k: int = 10,
             language: Optional[str] = None,
     ):
-        """
-        Cosine similarity search via pgvector.
-        Optionally filter by repo and language.
-        """
+        
         filters = []
         if repo_path:
             filters.append(f"repo_path='{repo_path}'")
