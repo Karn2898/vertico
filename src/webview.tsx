@@ -3,7 +3,7 @@ import { ChatWindow } from "./components/ChatWindow";
 import { DiffPanel } from "./components/DiffPanel";
 import { FileTree } from "./components/FileTree";1
   postMessage: console.log
-};
+ 
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("chat");
@@ -13,7 +13,7 @@ export default function App() {
   const [streaming, setStreaming] = useState(false);
 
   useEffect(() => {
-    // Listen for messages from extension host
+    
     window.addEventListener("message", (event) => {
       const msg = event.data;
       switch (msg.type) {
