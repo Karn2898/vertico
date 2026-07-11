@@ -1,5 +1,3 @@
-# packages/db/pyproject.toml
-
 [tool.poetry]
 name = "vertico-db"
 version = "0.1.0"
