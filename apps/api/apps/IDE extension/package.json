@@ -1,31 +1,42 @@
 {
-    "name": "Vertico",
-    "displayName": "Vertico",
-    "version": "0.1.0",
-    "engines":{"vscode":"^1.85.0"},
-    "categories":["Machine Learning","Programming Languages","Code Analysis"],
-    "activationEvents":["onStartupFinished"],
-    "main": "./out/extension.js",
-    "ontributes":{
-        "commands":[
-            {
-                "command":"vertico.start",
-                "title":"Start Vertico"
-            },
-            {
-                "command":"vertico.reviewFile",
-                "title":"Review File"
-            },
-            {
-                "command":"vertico.refactorCode",
-                "title":"Refactor Code"
-            },
-            {
-                "command":"vertico.fixbug",
-                "title": "fix bug",
-
-            },
-            {
+  "name": "vertico",
+  "displayName": "Vertico",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Code Analysis"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vertico.startChat",
+        "title": "Start Vertico"
+      },
+      {
+        "command": "Vertico.reviewFile",
+        "title": "Review File"
+      },
+      {
+        "command": "vertico.refactorFile",
+        "title": "Refactor File"
+      },
+      {
+        "command": "Vertico.fixbug",
+        "title": "Fix Bug"
+      },
+      {
+        "command": "copilot.indexRepo",
+        "title": "Index Repository"
+      },
+      {
         "command": "copilot.acceptDiff",
         "title": "Copilot: Accept Changes"
       },
@@ -33,52 +44,50 @@
         "command": "copilot.rejectDiff",
         "title": "Copilot: Reject Changes"
       }
-
-        ],
-
-        "keybindings":[
-            {
-                "command":"vertico.start",
-                "key":"ctrl+shift+v",
-                "mac":"cmd+shift+v",
-            },
-            {
-                "command":"copilot.refactorFile",
-                "key":"ctrl+shift+r",
-                "mac":"cmd+shift+r",
-            }
-        ],
-        "configuration":{
-            "title":Vertico ",
-            "properties":{
-            "type":"string",
-            "default": "http://localhost:8000",
-          "description": "URL of the Copilot Agent API"
+    ],
+    "keybindings": [
+      {
+        "command": "vertico.startChat",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v"
+      },
+      {
+        "command": "vertico.refactorFile",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r"
+      }
+    ],
+    "configuration": {
+      "title": "Vertico",
+      "properties": {
+        "Vertico.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/api",
+          "description": "URL of the Vertico API"
         }
-    }
-},
-"menus": {
+      }
+    },
+    "menus": {
       "editor/context": [
         {
-          "command": "copilot.refactorFile",
+          "command": "vertico.refactorFile",
           "group": "copilot"
         },
         {
-          "command": "copilot.fixBug",
+          "command": "Vertico.fixbug",
           "group": "copilot"
         }
       ]
     }
   },
-  "scripts":{
-    "build":"tsc -p tsconfig.json && cd webview && vite build",
-    "dev": "tsc -watch -p tsconfig.json",
-    "webview:dev":"cd webview && vite"
+  "scripts": {
+    "build": "tsc -p ../../../../tsconfig.json",
+    "dev": "tsc -watch -p ../../../../tsconfig.json"
   },
-  "devDependencies":{
-     "@types/vscode": "^1.85.0",
+  "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.3.0",
-    "vite": "^5.0.0"
+    "@types/vscode": "^1.85.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.4"
   }
 }
