@@ -9,12 +9,22 @@ class RefactorState(TypedDict):
     original_code: str
     review_notes: str
     refactored_code: str
-    errors: str | None
+    errors: str 
+    iterations: int
+
+
+class BugfixState(TypedDict):
+    original_code: str
+    error_message: str
+    review_notes: str
+    refactored_code: str
+    fixed_code: str
+    errors: str
     iterations: int
 
 
 def code_linter(state: RefactorState):
-    """checks the refractor code for error syntax errors."""
+    """checks the refractor code for  syntax errors."""
     print("LINTING CODE")
     code = state["refactored_code"]
     iterations = state.get("iterations", 0)
@@ -63,5 +73,24 @@ def code_refactorer(state: RefactorState):
 
     clean_code = response.content.replace("```python", "").replace("```", "").strip()
     return {"refactored_code": clean_code}
+
+
+def code_fixer(state: BugfixState):
+    print("FIXING BUG")
+    from .tools import llm_with_tools
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "you are a senior python engineer. fix the provided code so that the following error no longer occurs. output only the fixed code without any explanations."),
+        ("user", "Here is the original code : {code} . Here is the error to fix : {error_message}")
+    ])
+
+    chain = prompt | llm_with_tools
+    response = chain.invoke({
+        "code": state["original_code"],
+        "error_message": state.get("error_message", ""),
+    })
+
+    clean_code = response.content.replace("```python", "").replace("```", "").strip()
+    return {"fixed_code": clean_code}
 
     

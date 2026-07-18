@@ -1,5 +1,3 @@
-
-"""Small runner to test the agent graph with a code snippet."""
 import argparse
 import os
 import sys
@@ -44,8 +42,6 @@ def _load_env_file(repo_root: Path) -> None:
 def _has_api_key() -> bool:
     return bool(
         os.environ.get("NVIDIA_API_KEY")
-        or os.environ.get("GEMINI_API_KEY")
-        or os.environ.get("GOOGLE_API_KEY")
     )
 
 
@@ -81,7 +77,7 @@ def main() -> int:
 
     if not _has_api_key():
         print(
-            "[2/2] Skipping full graph: set NVIDIA_API_KEY, GOOGLE_API_KEY or GEMINI_API_KEY to run reviewer/refactorer nodes."
+            "[2/2] Skipping full graph: set NVIDIA_API_KEY to run reviewer/refactorer nodes."
         )
         return 0
         return 0

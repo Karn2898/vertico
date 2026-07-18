@@ -65,7 +65,7 @@ class SessionRepo:
     return db_session
 
 def accept_diff(self , session_id :str):
-    """Promote refactored → original, reset state for next run."""
+
     db_session=self.require(session_id)
     db_session.original_code=db_session.refactored_code
     db_session.review_notes=""

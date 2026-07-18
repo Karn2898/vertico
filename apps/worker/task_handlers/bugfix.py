@@ -25,16 +25,15 @@ def handle_bugfix(session_id: str, error_message: str = ""):
         repo.update_status(session_id , "running")
         logger.info(f"[bugfix] starting session {session_id}")
 
-    app=bugfix_graph.compile()
-    result=app.invoke(initial_state)
+    app = bugfix_graph.compile()
+    result = app.invoke(initial_state)
 
     with Session(engine) as db:
-        repo=SessionRepo(db)
-        refactord_code=result.get("fixed_code"),
-        errors=result.get("errors"),
-        iterations=result.get("iterations",0),
-        statuus="done",
-        )
+        repo = SessionRepo(db)
+        refactored_code = result.get("fixed_code")
+        errors = result.get("errors")
+        iterations = result.get("iterations", 0)
+        repo.update_status(session_id, "done")
 
     logger.info(f"[bugfix] completed session {session_id} with iterations: {iterations} and errors: {errors}")
-    return {"session_id":session_id ,"status":"done"}
+    return {"session_id": session_id, "status": "done"}

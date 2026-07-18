@@ -15,8 +15,8 @@ def retriever_node(state: AgentState):
     results=retrieve(
         query=query,
         repo_path=repo_path,
-        yop_k=10,
-        rerank_tio_k=5,
+        top_k=10,
+        rerank_top_k=5,
     )
 
     context_blocks=[

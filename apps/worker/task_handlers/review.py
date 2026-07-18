@@ -6,38 +6,33 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def handle_review(session_id: str , ):
+
+def handle_review(session_id: str):
     with Session(engine) as db:
-        repo=SessionRepo(db)
-        session=repo.get(session_id)
+        repo = SessionRepo(db)
+        session = repo.get(session_id)
 
         if not session:
             raise ValueError(f"Session not found :{session_id}")
 
-            initial_state={
-                "original_code":session.orignal_code,
-                "review_notes":"",
-            }
+        initial_state = {
+            "original_code": session.original_code,
+            "review_notes": "",
+        }
 
-            repo.update_status(session_id , "running")
-            logger.info(f"[review] starting session {session_id}")
+        repo.update_status(session_id, "running")
+        logger.info(f"[review] starting session {session_id}")
 
-        app=review_graph.compile()
-        result=app.invoke(intial_state)
+    app = review_graph.compile()
+    result = app.invoke(initial_state)
 
-        with session(engine) as db:
-            repo=SessionRepo(db)
-            repo.update_agent_state(
-                session_id,
-                review_notes=result.get("review_notes"),
-                status="done",
-            )
+    with Session(engine) as db:
+        repo = SessionRepo(db)
+        repo.update_agent_state(
+            session_id,
+            review_notes=result.get("review_notes"),
+            status="done",
+        )
 
-        logger.info(f"[review] completed session {session_id}")
-        return {"session_id":session_id, "status":"done"}
-
-    from .refactor import handle_refactor
-    from .bugfix handle_bugfix
-    from .review import handle_review
-
-    __all__ = ["handle_refactor", "handle_bugfix", "handle_review"]
+    logger.info(f"[review] completed session {session_id}")
+    return {"session_id": session_id, "status": "done"}

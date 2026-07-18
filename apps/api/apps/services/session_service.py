@@ -13,12 +13,13 @@ def get_repo(dbdb:Session=Depends(get_session)):
 _sessions: dict[str, dict] = {}
 
 
-def create_session(filename: str, original_code: str) -> dict:
+def create_session(filename: str, original_code: str, graph: str = "refactor") -> dict:
     session_id = str(uuid.uuid4())
 
     _sessions[session_id] = {
         "session_id": session_id,
         "filename": filename,
+        "graph": graph,
         "status": "idle",
         "created_at": datetime.utcnow().isoformat(),
         "agent_state": {

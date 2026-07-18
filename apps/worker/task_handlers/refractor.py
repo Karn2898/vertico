@@ -20,8 +20,10 @@ def handle_refactor(session_id: str):
             "iterations":session.iterations,
         }
 
-        repo=refactor_workflow.compile()
-        result=app.invoke(initial_state)
+        repo.update_status(session_id, "running")
+
+        app = refactor_workflow.compile()
+        result = app.invoke(initial_state)
 
         with Session(engine) as db:
             repo=SessionRepo(db)

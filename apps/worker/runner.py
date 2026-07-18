@@ -11,53 +11,55 @@ logger = get_task_logger(__name__)
 
 
 class GraphTask(Task):
-    abstract=True
+    abstract = True
 
-    def on_failure(self , exc , task_id , args ,kwargs ,einfo):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Mark session as failed in DB if task crashes."""
-        session_id =args[0] if args else kwargs.get("session_id")
+        session_id = args[0] if args else kwargs.get("session_id")
 
-        if session_id :
+        if session_id:
             with Session(engine) as db:
-                repo=SessionRepo(db)
-                repo.update_status(session_id , "failed")
+                repo = SessionRepo(db)
+                repo.update_status(session_id, "failed")
 
             logger.error(f"task {task_id} failed for session {session_id} with error: {exc}")
-        def on_retry(self , exc , task_id , args , kwargs , einfo):
-            session_id=args[0] if args else kwargs.get("session_id")
-            logger.warning(f"task {task_id} for session {session_id} is being retried due to error: {exc}")
+
+    def on_retry(self, exc, task_id, args, kwargs, einfo):
+        session_id = args[0] if args else kwargs.get("session_id")
+        logger.warning(f"task {task_id} for session {session_id} is being retried due to error: {exc}")
 
 
-    @app.task(
-        bind=True,
-        base=GraphTask,
-        name="apps.worker.runner.run_refactor",
-        max_retires=2,
-        default_retry_delay=10,
-    )
+@app.task(
+    bind=True,
+    base=GraphTask,
+    name="apps.worker.runner.run_refactor",
+    max_retries=2,
+    default_retry_delay=10,
+)
+def run_refactor(self, session_id: str):
+    try:
+        return handle_refactor(session_id)
+    except Exception as exc:
+        if _is_transient(exc):
+            raise self.retry(exc=exc)
+        raise
 
-    def run_refactor(self , session_id: str):
-        try:
-            return handle_refactor(session_id)
-        except Exception as e:
-            if _is_transient(exc):
-                raise self.retry(exc=exc)
-            raise
 
-    @app.task(
+@app.task(
     bind=True,
     base=GraphTask,
     name="apps.worker.runner.run_bugfix",
     max_retries=2,
     default_retry_delay=10,
 )
-    def run_bugfix(self , session_id: str , error_message: str =""):
-        try:
-            return handle_bugfix(session_id : str , error_message
-        except Exception as e:
+def run_bugfix(self, session_id: str, error_message: str = ""):
+    try:
+        return handle_bugfix(session_id, error_message)
+    except Exception as exc:
         if _is_transient(exc):
             raise self.retry(exc=exc)
         raise
+
 
 @app.task(
     bind=True,
@@ -72,7 +74,7 @@ def run_review(self, session_id: str) -> dict:
     except Exception as exc:
         if _is_transient(exc):
             raise self.retry(exc=exc)
-        raise             
+        raise
 
 
 def _is_transient(exc: Exception) -> bool:
