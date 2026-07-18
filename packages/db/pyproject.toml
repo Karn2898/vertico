@@ -10,7 +10,7 @@ alembic = "*"
 pgvector = "*"          
 
 [tool.poetry]
-name = "copilot-db"
+name = "vertico-db"
 version = "0.1.0"
 
 [tool.poetry.dependencies]

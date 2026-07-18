@@ -32,7 +32,7 @@ class SandboxManager:
         if not self.client:
             return self._fallback_run(code , timeout)
 
-        image=f"copilot-sandbox-{language}"
+        image=f"vertico-sandbox-{language}"
         command = self._build_command(code, language, filename)
         try:
             

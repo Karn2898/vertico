@@ -28,7 +28,7 @@ export function ChatWindow({ messages, streaming, onSend }: Props) {
       <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 && (
           <p className="text-muted text-center mt-8">
-            Open a file and run <strong>Copilot: Refactor</strong> to start.
+            Open a file and run <strong>Vertico: Refactor</strong> to start.
           </p>
         )}
         {messages.map((msg, i) => (

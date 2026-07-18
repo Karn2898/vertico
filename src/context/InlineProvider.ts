@@ -37,7 +37,7 @@ export class InlineProvider implements vscode.InlineCompletionItemProvider {
       const state = await this.api.getSessionState(sessionId);
       if (!state?.review_notes) return null;
 
-      const suggestion = `\n    // TODO (copilot): ${state.review_notes.split("\n")[0]}`;
+      const suggestion = `\n    // TODO (vertico): ${state.review_notes.split("\n")[0]}`;
 
       const item = new vscode.InlineCompletionItem(suggestion, new vscode.Range(position, position));
       return new vscode.InlineCompletionList([item]);

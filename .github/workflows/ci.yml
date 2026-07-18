@@ -55,7 +55,7 @@ jobs:
           context: .
           file: infra/docker/api.Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/copilot-agent/api:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/copilot-agent/api:latest
+          tags: ghcr.io/${{ github.repository_owner }}/vertico/api:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/vertico/api:latest
 
       - name: Build and push worker image
         uses: docker/build-push-action@v5
@@ -63,7 +63,7 @@ jobs:
           context: .
           file: infra/docker/worker.Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/copilot-agent/worker:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/copilot-agent/worker:latest
+          tags: ghcr.io/${{ github.repository_owner }}/vertico/worker:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/vertico/worker:latest
 
 
 deploy:

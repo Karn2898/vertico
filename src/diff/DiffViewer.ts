@@ -20,7 +20,7 @@ export class DiffViewer {
       "vscode.diff",
       originalUrl,
       refactoredUrl,
-      `copilot: ${diff.diff.lines_added} added, ${diff.diff.lines_removed} removed`
+      `vertico: ${diff.diff.lines_added} added, ${diff.diff.lines_removed} removed`
     );
   }
 

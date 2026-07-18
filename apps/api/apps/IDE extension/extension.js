@@ -52,7 +52,7 @@ export function activate(context) {
         ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
         await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
     });
-    vscode.commands.registerCommand("copilot.indexRepo", async () => {
+    vscode.commands.registerCommand("vertico.indexRepo", async () => {
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!workspaceRoot) {
             vscode.window.showErrorMessage("No workspace open");
@@ -63,13 +63,13 @@ export function activate(context) {
             vscode.window.showInformationMessage("Repository indexed successfully");
         });
     });
-    vscode.commands.registerCommand("copilot.acceptDiff", async () => {
+    vscode.commands.registerCommand("vertico.acceptDiff", async () => {
         const sessionId = sessionManager.currentSessionId;
         if (!sessionId)
             return;
         await diffViewer.accept(sessionId);
     });
-    vscode.commands.registerCommand("copilot.rejectDiff", async () => {
+    vscode.commands.registerCommand("vertico.rejectDiff", async () => {
         const sessionId = sessionManager.currentSessionId;
         if (!sessionId)
             return;

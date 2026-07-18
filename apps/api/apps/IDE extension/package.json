@@ -15,10 +15,37 @@
   ],
   "main": "./out/apps/api/apps/IDE extension/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "verticoActivityBar",
+          "title": "Vertico",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "verticoActivityBar": [
+        {
+          "type": "webview",
+          "id": "vertico.chatView",
+          "name": "Vertico Chat",
+          "icon": "$(comment-discussion)",
+          "contextualTitle": "Vertico"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "vertico.startChat",
-        "title": "Start Vertico"
+        "title": "Start Vertico",
+        "category": "Vertico",
+        "icon": "$(robot)"
+      },
+      {
+        "command": "vertico.showChat",
+        "title": "Show Chat",
+        "category": "Vertico"
       },
       {
         "command": "Vertico.reviewFile",
@@ -47,7 +74,7 @@
     ],
     "keybindings": [
       {
-        "command": "vertico.startChat",
+        "command": "vertico.showChat",
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v"
       },
@@ -76,6 +103,13 @@
         {
           "command": "Vertico.fixbug",
           "group": "vertico"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "vertico.showChat",
+          "when": "view == vertico.chatView",
+          "group": "navigation"
         }
       ]
     }

@@ -32,14 +32,9 @@ services:
     volumes:
       - ../../:/app       
 
-volumes:
-  vertico_db_data:
-
-
-
   redis:
     image: redis:7-alpine
-    container_name: copilot-redis
+    container_name: vertico-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -52,9 +47,9 @@ volumes:
     build:
       context: ../../
       dockerfile: infra/docker/worker.Dockerfile
-    container_name: copilot-worker
+    container_name: vertico-worker
     environment:
-      DATABASE_URL: postgresql://copilot:copilot@db:5432/copilot
+      DATABASE_URL: postgresql://tom:vertoco123@db:5432/vertico
       REDIS_URL: redis://redis:6379/0
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
@@ -64,3 +59,6 @@ volumes:
         condition: service_healthy
     volumes:
       - ../../:/app
+
+volumes:
+  vertico_db_data:

@@ -1,51 +1,31 @@
 // src/chat/ChatPanel.ts
 
 import * as vscode from "vscode";
-import * as path from "path";
 import { ApiClient } from "../services/ApiClient";
 import { SessionManager } from "../services/SessionManager";
 import { ContextCollector } from "../context/ContextCollector";
 
-export class ChatPanel {
-  public static currentPanel: ChatPanel | undefined;
-  private readonly panel: vscode.WebviewPanel;
+export class ChatPanel implements vscode.WebviewViewProvider {
+  public static readonly viewType = "vertico.chatView";
+  private _view?: vscode.WebviewView;
   private eventSource: EventSource | null = null;
 
-  static createOrShow(
-    extensionUri: vscode.Uri,
-    api: ApiClient,
-    sessionManager: SessionManager,
-    contextCollector: ContextCollector
-  ) {
-    if (ChatPanel.currentPanel) {
-      ChatPanel.currentPanel.panel.reveal(vscode.ViewColumn.Two);
-      return;
-    }
-    const panel = vscode.window.createWebviewPanel(
-      "copilotChat",
-      "Copilot Agent",
-      vscode.ViewColumn.Two,
-      {
-        enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(extensionUri, "webview", "dist")],
-      }
-    );
-    ChatPanel.currentPanel = new ChatPanel(
-      panel, extensionUri, api, sessionManager, contextCollector
-    );
-  }
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    private readonly api: ApiClient,
+    private readonly sessionManager: SessionManager,
+    private readonly contextCollector: ContextCollector
+  ) {}
 
-  private constructor(
-    panel: vscode.WebviewPanel,
-    extensionUri: vscode.Uri,
-    private api: ApiClient,
-    private sessionManager: SessionManager,
-    private contextCollector: ContextCollector,
-  ) {
-    this.panel = panel;
-    this.panel.webview.html = this._getHtml(extensionUri);
+  resolveWebviewView(webviewView: vscode.WebviewView) {
+    this._view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, "webview", "dist")],
+    };
+    webviewView.webview.html = this._getHtml(webviewView.webview);
 
-    this.panel.webview.onDidReceiveMessage(async (msg) => {
+    webviewView.webview.onDidReceiveMessage(async (msg) => {
       switch (msg.type) {
         case "sendMessage":
           await this._handleChatMessage(msg.text);
@@ -61,11 +41,13 @@ export class ChatPanel {
           break;
       }
     });
+  }
 
-    this.panel.onDidDispose(() => {
-      this.eventSource?.close();
-      ChatPanel.currentPanel = undefined;
-    });
+  reveal() {
+    vscode.commands.executeCommand(
+      "workbench.view.extension.verticoActivityBar",
+      ChatPanel.viewType
+    );
   }
 
   private async _handleChatMessage(text: string) {
@@ -111,15 +93,15 @@ export class ChatPanel {
   }
 
   private _postToWebview(message: object) {
-    this.panel.webview.postMessage(message);
+    this._view?.webview.postMessage(message);
   }
 
-  private _getHtml(extensionUri: vscode.Uri): string {
-    const scriptUri = this.panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, "webview", "dist", "assets", "index.js")
+  private _getHtml(webview: vscode.Webview): string {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "webview", "dist", "assets", "index.js")
     );
-    const styleUri = this.panel.webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, "webview", "dist", "assets", "index.css")
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "webview", "dist", "assets", "index.css")
     );
     return `<!DOCTYPE html>
 <html lang="en">
@@ -127,7 +109,7 @@ export class ChatPanel {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="${styleUri}"/>
-  <title>Copilot Agent</title>
+  <title>Vertico Agent</title>
 </head>
 <body class="bg-background text-foreground">
   <div id="root"></div>

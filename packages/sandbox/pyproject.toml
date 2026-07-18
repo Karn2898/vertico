@@ -1,6 +1,6 @@
 
 [tool.poetry]
-name = "copilot-sandbox"
+name = "vertico-sandbox"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
