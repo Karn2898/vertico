@@ -3,20 +3,27 @@ from fastapi import HTTPException
 import uuid
 from fastapi import Depends
 from sqlmodel import Session
-from db.database import get_session
-from db.repositories import SessionRepo
 
-def get_repo(dbdb:Session=Depends(get_session)):
-    return SessionRepo(db)
+# `db` package is optional for the in-memory session store.
+try:
+    from db.database import get_session
+    from db.repositories import SessionRepo
+except Exception:  # pragma: no cover - db not installed
+    get_session = None
+    SessionRepo = None
+
+
+def get_repo(dbdb: Session = Depends(get_session)) -> "SessionRepo":
+    return SessionRepo(dbdb)
 
 # Single source of truth — only this file touches the store directly
-_sessions: dict[str, dict] = {}
+sessions: dict[str, dict] = {}
 
 
 def create_session(filename: str, original_code: str, graph: str = "refactor") -> dict:
     session_id = str(uuid.uuid4())
 
-    _sessions[session_id] = {
+    sessions[session_id] = {
         "session_id": session_id,
         "filename": filename,
         "graph": graph,
@@ -30,32 +37,32 @@ def create_session(filename: str, original_code: str, graph: str = "refactor") -
             "iterations": 0,
         }
     }
-    return _sessions[session_id]
+    return sessions[session_id]
 
 
 def get_session(session_id: str) -> dict:
     _require(session_id)
-    return _sessions[session_id]
+    return sessions[session_id]
 
 
 def get_all_sessions() -> list[dict]:
-    return list(_sessions.values())
+    return list(sessions.values())
 
 
 def update_status(session_id: str, status: str):
     _require(session_id)
-    _sessions[session_id]["status"] = status
+    sessions[session_id]["status"] = status
 
 
 def update_agent_state(session_id: str, state_patch: dict):
     """Called by agent.py after each graph node completes."""
     _require(session_id)
-    _sessions[session_id]["agent_state"].update(state_patch)
+    sessions[session_id]["agent_state"].update(state_patch)
 
 
 def delete_session(session_id: str) -> dict:
     _require(session_id)
-    return _sessions.pop(session_id)
+    return sessions.pop(session_id)
 
 
 def require_session(session_id: str):
@@ -66,5 +73,5 @@ def require_session(session_id: str):
 # --- Internal ---
 
 def _require(session_id: str):
-    if session_id not in _sessions:
+    if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")

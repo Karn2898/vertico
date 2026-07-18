@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from typing import Optional
 import difflib
 
-from .sessions import sessions, _require
+from ..services.session_service import sessions
+from .session import _require
 
 router = APIRouter(prefix="/diffs", tags=["diffs"])
 

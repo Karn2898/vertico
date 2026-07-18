@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 # Prefer the shared session store and agent graphs
-from .session import sessions, _require
+from ..services.session_service import sessions, _require
 from celery.result import AsyncResult
 
 router = APIRouter(prefix="/agent", tags=["agent"])

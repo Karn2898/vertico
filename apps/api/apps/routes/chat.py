@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import datetime
 import json
 
-from .session import sessions, _require
+from ..services.session_service import sessions, _require
 import importlib
 import sys
 from pathlib import Path

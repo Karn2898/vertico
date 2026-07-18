@@ -56,20 +56,6 @@ def delete(session_id: str):
 
     return {"deleted": session_id}
 
-@router.post("/", response_model=SessionResponse)
-def create(
-    req: CreateSessionRequest,
-    repo: SessionRepo = Depends(get_repo)
-):
-    session = repo.create(req.filename, req.original_code)
-    return _to_response(session)
-
-
-@router.get("/{session_id}", response_model=SessionResponse)
-def get(session_id: str, repo: SessionRepo = Depends(get_repo)):
-    session = repo.get(session_id)
-    return _to_response(session)
-
 
 # --- Helper ---
 
