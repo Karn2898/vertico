@@ -1,0 +1,38 @@
+{
+  "name": "vertico-desktop",
+  "version": "0.1.0",
+  "description": "Vertico AI coding assistant - desktop app",
+  "homepage": "https://github.com/Karn2898/vertico",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Karn2898/vertico.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:web": "cd ../../webview-dev && npm install && npm run build && cp -r dist ../../apps/desktop/web",
+    "build:linux": "electron-builder --linux deb",
+    "dist": "npm run build:web && npm run build:linux"
+  },
+  "build": {
+    "appId": "ai.vertico.desktop",
+    "productName": "Vertico",
+    "files": [
+      "main.js",
+      "preload.js",
+      "web/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "linux": {
+      "target": ["deb"],
+      "category": "Development",
+      "maintainer": "Vertico <vertico@localhost>"
+    }
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.0.0"
+  }
+}
