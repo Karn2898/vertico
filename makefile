@@ -90,24 +90,23 @@ sandbox-clean:
 
 # IDE Extension
 
+EXTENSION_DIR := apps/api/apps/IDE\ extension
+
 ext-install:
-	cd apps/ide-extension && npm install
-	cd apps/ide-extension/webview && npm install
+	cd $(EXTENSION_DIR) && npm install
 
 ext-build:
-	cd apps/ide-extension/webview && npm run build
-	cd apps/ide-extension && npm run build
+	cd $(EXTENSION_DIR) && npm run build
 
 ext-dev:
-	cd apps/ide-extension/webview && npm run dev &
-	cd apps/ide-extension && npm run dev
+	cd $(EXTENSION_DIR) && npm run dev
 
 ext-package:
-	cd apps/ide-extension && npx vsce package
+	cd $(EXTENSION_DIR) && npx vsce package
 
 # JetBrains
 jb-build:
-	cd apps/ide-extension/jetbrains && ./gradlew buildPlugin
+	cd $(EXTENSION_DIR)/jetbrains && ./gradlew buildPlugin
 
 jb-run:
-	cd apps/ide-extension/jetbrains && ./gradlew runIde
+	cd $(EXTENSION_DIR)/jetbrains && ./gradlew runIde
