@@ -1,0 +1,30 @@
+cat > .gitignore <<'EOF'
+# Secrets / env
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+vertico/
+vertico-*/
+*.egg-info/
+
+# Node
+node_modules/
+webview-dev/node_modules/
+
+# Build output
+apps/api/apps/IDE extension/out/
+
+# Editor / tooling
+.vscode/
+.kilo/
+.idea/
+
+# Packaging artifacts
+*.vsix
+dist/
+build/
+EOF
