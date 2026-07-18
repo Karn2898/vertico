@@ -6,6 +6,7 @@ Vertico is an AI coding assistant designed to integrate with IDEs and help devel
 
 ## Features
 
+
 - Context-aware code suggestions
 - Refactoring guidance
 - IDE integration hooks
