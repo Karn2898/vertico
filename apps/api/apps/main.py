@@ -50,6 +50,23 @@ app=FastAPI(
     lifespan=lifespan,
 )
 
+# Make the top-level `apps` package importable for route modules.
+import sys
+from pathlib import Path as _Path
+_repo_root = _Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from apps.api.apps.routes import session as session_routes
+from apps.api.apps.routes import agent as agent_routes
+from apps.api.apps.routes import chat as chat_routes
+from apps.api.apps.routes import diffs as diffs_routes
+
+app.include_router(session_routes.router)
+app.include_router(agent_routes.router)
+app.include_router(chat_routes.router)
+app.include_router(diffs_routes.router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
