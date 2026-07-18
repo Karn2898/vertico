@@ -51,8 +51,15 @@ function activate(context) {
     sessionManager = new SessionManager_1.SessionManager(api);
     const contextCollector = new ContextCollector_1.ContextCollector();
     const diffViewer = new DiffViewer_1.DiffViewer(api, sessionManager);
+    const chatPanel = new ChatPanel_1.ChatPanel(context.extensionUri, api, sessionManager, contextCollector);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(ChatPanel_1.ChatPanel.viewType, chatPanel, {
+        webviewOptions: { retainContextWhenHidden: true },
+    }));
     vscode.commands.registerCommand("vertico.startChat", () => {
-        ChatPanel_1.ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        chatPanel.reveal();
+    });
+    vscode.commands.registerCommand("vertico.showChat", () => {
+        chatPanel.reveal();
     });
     vscode.commands.registerCommand("vertico.refactorFile", async () => {
         const editor = vscode.window.activeTextEditor;
@@ -62,7 +69,7 @@ function activate(context) {
         const filename = editor.document.fileName;
         await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." }, async () => {
             const session = await sessionManager.createSession(filename, code);
-            ChatPanel_1.ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+            chatPanel.reveal();
             await sessionManager.runGraph(session.session_id, "refactor");
         });
     });
@@ -73,7 +80,7 @@ function activate(context) {
         const code = editor.document.getText();
         const filename = editor.document.fileName;
         const session = await sessionManager.createSession(filename, code);
-        ChatPanel_1.ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "review");
     });
     vscode.commands.registerCommand("Vertico.fixbug", async () => {
@@ -86,7 +93,7 @@ function activate(context) {
         const code = editor.document.getText();
         const filename = editor.document.fileName;
         const session = await sessionManager.createSession(filename, code);
-        ChatPanel_1.ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
     });
     vscode.commands.registerCommand("vertico.indexRepo", async () => {

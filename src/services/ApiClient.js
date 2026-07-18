@@ -1,4 +1,7 @@
-export class ApiClient {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ApiClient = void 0;
+class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -12,8 +15,18 @@ export class ApiClient {
             throw new Error(`createSession failed: ${res.statusText}`);
         return (await res.json());
     }
+    async runAgent(sessionId, graph, error_message) {
+        const res = await fetch(`${this.baseUrl}/agent/run/${sessionId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ graph, error_message }),
+        });
+        if (!res.ok)
+            throw new Error(`runAgent failed: ${res.statusText}`);
+        return (await res.json());
+    }
     async getTaskStatus(taskId) {
-        const res = await fetch(`${this.baseUrl}/tasks/${taskId}`);
+        const res = await fetch(`${this.baseUrl}/agent/tasks/${taskId}`);
         if (!res.ok)
             throw new Error(`getTaskStatus failed: ${res.statusText}`);
         return await res.json();
@@ -62,3 +75,4 @@ export class ApiClient {
         return es;
     }
 }
+exports.ApiClient = ApiClient;

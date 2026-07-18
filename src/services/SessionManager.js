@@ -1,4 +1,7 @@
-export class SessionManager {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SessionManager = void 0;
+class SessionManager {
     constructor(api) {
         this.api = api;
         this.sessions = new Map();
@@ -11,11 +14,11 @@ export class SessionManager {
         return session;
     }
     async runGraph(sessionId, graph, errorMessage) {
-        const taskId = sessionId;
+        const { task_id } = await this.api.runAgent(sessionId, graph, errorMessage);
         return new Promise((resolve, reject) => {
             const interval = setInterval(async () => {
                 try {
-                    const status = await this.api.getTaskStatus(taskId);
+                    const status = await this.api.getTaskStatus(task_id);
                     // accept several possible shapes for completion
                     if (status === "completed" ||
                         status?.state === "COMPLETED" ||
@@ -45,3 +48,4 @@ export class SessionManager {
         this.currentSessionId = null;
     }
 }
+exports.SessionManager = SessionManager;

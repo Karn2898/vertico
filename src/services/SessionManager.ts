@@ -19,11 +19,11 @@ export class SessionManager {
     graph: "refactor" | "bugfix" | "review",
     errorMessage?: string
   ): Promise<void> {
-    const taskId = sessionId;
+    const { task_id } = await this.api.runAgent(sessionId, graph, errorMessage);
     return new Promise((resolve, reject) => {
       const interval = setInterval(async () => {
         try {
-          const status = await this.api.getTaskStatus(taskId);
+          const status = await this.api.getTaskStatus(task_id);
           // accept several possible shapes for completion
           if (
             status === "completed" ||

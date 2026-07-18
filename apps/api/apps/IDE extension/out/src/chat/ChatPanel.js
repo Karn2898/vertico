@@ -37,25 +37,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatPanel = void 0;
 const vscode = __importStar(require("vscode"));
 class ChatPanel {
-    static createOrShow(extensionUri, api, sessionManager, contextCollector) {
-        if (ChatPanel.currentPanel) {
-            ChatPanel.currentPanel.panel.reveal(vscode.ViewColumn.Two);
-            return;
-        }
-        const panel = vscode.window.createWebviewPanel("verticoChat", "Vertico Agent", vscode.ViewColumn.Two, {
-            enableScripts: true,
-            localResourceRoots: [vscode.Uri.joinPath(extensionUri, "webview", "dist")],
-        });
-        ChatPanel.currentPanel = new ChatPanel(panel, extensionUri, api, sessionManager, contextCollector);
-    }
-    constructor(panel, extensionUri, api, sessionManager, contextCollector) {
+    constructor(extensionUri, api, sessionManager, contextCollector) {
+        this.extensionUri = extensionUri;
         this.api = api;
         this.sessionManager = sessionManager;
         this.contextCollector = contextCollector;
         this.eventSource = null;
-        this.panel = panel;
-        this.panel.webview.html = this._getHtml(extensionUri);
-        this.panel.webview.onDidReceiveMessage(async (msg) => {
+    }
+    resolveWebviewView(webviewView) {
+        this._view = webviewView;
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, "webview", "dist")],
+        };
+        webviewView.webview.html = this._getHtml(webviewView.webview);
+        webviewView.webview.onDidReceiveMessage(async (msg) => {
             switch (msg.type) {
                 case "sendMessage":
                     await this._handleChatMessage(msg.text);
@@ -71,10 +67,9 @@ class ChatPanel {
                     break;
             }
         });
-        this.panel.onDidDispose(() => {
-            this.eventSource?.close();
-            ChatPanel.currentPanel = undefined;
-        });
+    }
+    reveal() {
+        vscode.commands.executeCommand("workbench.view.extension.verticoActivityBar", ChatPanel.viewType);
     }
     async _handleChatMessage(text) {
         const sessionId = this.sessionManager.currentSessionId;
@@ -114,11 +109,11 @@ class ChatPanel {
         this._postToWebview({ type: "context", context: ctx });
     }
     _postToWebview(message) {
-        this.panel.webview.postMessage(message);
+        this._view?.webview.postMessage(message);
     }
-    _getHtml(extensionUri) {
-        const scriptUri = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "webview", "dist", "assets", "index.js"));
-        const styleUri = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "webview", "dist", "assets", "index.css"));
+    _getHtml(webview) {
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "webview", "dist", "assets", "index.js"));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "webview", "dist", "assets", "index.css"));
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -135,3 +130,4 @@ class ChatPanel {
     }
 }
 exports.ChatPanel = ChatPanel;
+ChatPanel.viewType = "vertico.chatView";

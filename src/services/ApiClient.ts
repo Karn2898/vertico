@@ -38,8 +38,22 @@ export class ApiClient {
     return (await res.json()) as Session;
   }
 
+  async runAgent(
+    sessionId: string,
+    graph: "refactor" | "bugfix" | "review",
+    error_message?: string
+  ): Promise<{ task_id: string }> {
+    const res = await fetch(`${this.baseUrl}/agent/run/${sessionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ graph, error_message }),
+    });
+    if (!res.ok) throw new Error(`runAgent failed: ${res.statusText}`);
+    return (await res.json()) as { task_id: string };
+  }
+
   async getTaskStatus(taskId: string): Promise<any> {
-    const res = await fetch(`${this.baseUrl}/tasks/${taskId}`);
+    const res = await fetch(`${this.baseUrl}/agent/tasks/${taskId}`);
     if (!res.ok) throw new Error(`getTaskStatus failed: ${res.statusText}`);
     return await res.json();
   }

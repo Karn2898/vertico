@@ -2,7 +2,7 @@ import { ApiClient as ServiceApiClient, Session, SessionState, DiffResult } from
 
 
 export class ApiClient extends ServiceApiClient {
-  // Return a minimal session state shape used across the codebase
+ 
   async getSessionState(sessionId: string): Promise<any> {
    
     return { review_notes: null, refactored_code: null } as any;
