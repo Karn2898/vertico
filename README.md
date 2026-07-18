@@ -128,6 +128,60 @@ Then in VS Code:
 > port `8000`, so set `Vertico.apiUrl` to `http://localhost:8000` (or update
 > `extension.ts`) so the extension can reach the backend.
 
+## Desktop app (Electron + `.deb`)
+
+Vertico ships a self-contained desktop application (its own window, no browser
+needed) built with Electron. The web UI is bundled, so the app launches even
+without a backend; when the API is running it connects automatically.
+
+### Build the `.deb`
+
+```bash
+# 1. Build the React web UI into the desktop app
+cd webview-dev && npm install && npm run build && cp -r dist ../apps/desktop/web && cd ..
+
+# 2. Build the Electron app + .deb (downloads Electron ~100MB on first run)
+cd apps/desktop && npm install && npm run build:linux
+```
+
+Output: `apps/desktop/release/vertico-desktop_0.1.0_amd64.deb`
+(copied to repo root as `vertico-desktop_0.1.0_amd64.deb`).
+
+### Install & run
+
+```bash
+sudo dpkg -i vertico-desktop_0.1.0_amd64.deb
+vertico-desktop          # launches its own window
+```
+
+The window loads, in priority order:
+1. `http://localhost:5173` — the live web UI dev server (if running)
+2. `http://localhost:8000/docs` — the API docs (if running)
+3. The **bundled static web UI** — works fully offline with no backend
+
+### How the desktop app talks to the API
+
+The web UI (`webview-dev/src/App.tsx`) creates a session on startup and streams
+chat via `POST /chat/message` (Server-Sent Events), using the shared
+`src/services/ApiClient.ts`. It auto-detects the API at `http://localhost:8000`
+and shows an "offline" badge if it is not running. To use a different API URL,
+pass it as a query param: `file://.../index.html?api=http://host:port`.
+
+### Files
+
+- `apps/desktop/` — Electron main process (`main.js`), preload (`preload.js`),
+  `package.json` (electron-builder config), and `web/` (bundled UI).
+- `webview-dev/` — Vite React app that becomes the UI (`npm run dev` for live reload).
+- `packaging/vertico/` — lightweight Python/tkinter `.deb` alternative that just
+  opens the web UI in your browser (see "Legacy `.deb` (launcher)" below).
+
+### Legacy `.deb` (launcher)
+
+A dependency-light `.deb` that only opens the web UI in your default browser:
+build with `dpkg-deb --build packaging/vertico vertico_0.1.0_amd64.deb` (see
+`packaging/vertico/DEBIAN/control` for metadata). Install with
+`sudo dpkg -i vertico_0.1.0_amd64.deb`, then run `vertico`.
+
 ## Known gaps
 
 - `infra/docker/api.Dockerfile` does not exist yet (only `worker.Dockerfle`),
@@ -136,8 +190,11 @@ Then in VS Code:
 - The compose `db` service uses Postgres user `tom`, while `.env` /
   `packages/db/migrations/env.py` reference `vertico`. Use the `tom` credentials
   for the worker, and align `.env` if you run the API via compose.
-- `apps/routes/health.py` has a pre-existing syntax error (`str{e}`) that breaks
-  that module's import; fix it before relying on the health route.
+- The API does not mount its routers by default — `apps/api/apps/main.py`
+  includes them from `apps/api/apps/routes`. The `packages/db` package must be
+  installed (`pip install -e packages/db`) or the in-memory session store is used.
+- `packages/db/pyproject.toml` has a duplicated `[tool.poetry]` block that breaks
+  `pip install -e packages/db`; consolidate it before installing the DB package.
 
 ## Contributing
 
