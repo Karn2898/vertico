@@ -4,7 +4,7 @@ from typing import Optional
 import difflib
 
 from ..services.session_service import sessions
-from .session import _require
+from ..services.session_service import sessions, _require
 
 router = APIRouter(prefix="/diffs", tags=["diffs"])
 
@@ -16,11 +16,19 @@ class DiffRequest(BaseModel):
     lines_added: int
     lines_removed: int
 
+class DiffHunk(BaseModel):
+    original: str
+    refactored: str
+    unified: str
+    filename: str
+    lines_added: int
+    lines_removed: int
+
 class DiffResponse(BaseModel):
     session_id: str
-    filename: str 
-    has_changes : bool
-    diff : Optional[DiffHunk]
+    filename: str
+    has_changes: bool
+    diff: Optional[DiffHunk]
     status: str
 
 class AcceptRejectRequest(BaseModel):
@@ -76,7 +84,7 @@ def preview_diff(session_id: str):
     filename=session.get("filename", "unknown.py")
 
     unified=_unified_diff(original ,refactored , filename)
-   return {"session_id": session_id , "preview":unified}
+    return {"session_id": session_id, "preview": unified}
 
 @router.post("/{session_id}/accept")
 def accept_diff(session_id:str):
@@ -143,10 +151,10 @@ def reject_diff(session_id:str):
 
 def _unified_diff(original:str , refactored : str , filename : str ):
     """Generate a unified diff string between original and refactored code."""
-    original_lines=original.spitlines(keepends=True)
-    refactored_lines=refactored.splitlines(keepends=True)
+    original_lines = original.splitlines(keepends=True)
+    refactored_lines = refactored.splitlines(keepends=True)
 
-    diff=dfflib.unified_diff(
+    diff = difflib.unified_diff(
         original_lines,
         refactored_lines,
         fromfile=f"original/{filename}",
@@ -156,7 +164,7 @@ def _unified_diff(original:str , refactored : str , filename : str ):
 
     return "".join(diff)
 
-def build_hunk(original:str , refactored:str , filename:Str ):
+def build_hunk(original: str, refactored: str, filename: str):
     unified=_unified_diff(original , refactored , filename)
 
     lines_added=sum(
