@@ -21,10 +21,16 @@ except Exception:
     sys.path.append(str(shared_path))
     graphs = importlib.import_module("agent_core.graphs")
 
-from rag.indexers.repo_indexer import index_repo
+try:
+    from rag.indexers.repo_indexer import index_repo
+except Exception:  # pragma: no cover - rag package not installed
+    index_repo = None
 
 # Celery task entrypoints
-from apps.worker.runner import run_refactor, run_bugfix, run_review
+try:
+    from apps.worker.runner import run_refactor, run_bugfix, run_review
+except Exception:  # pragma: no cover - worker package not installed
+    run_refactor = run_bugfix = run_review = None
 
 VALID_GRAPHS = ("refactor", "bugfix", "review")
 
@@ -37,9 +43,15 @@ class RunAgentRequest(BaseModel):
 def _dispatch(session_id: str, graph: str, error_message: Optional[str] = None):
     """Enqueue the correct Celery task for the requested graph."""
     if graph == "bugfix":
+        if run_bugfix is None:
+            raise HTTPException(status_code=501, detail="Worker package not installed; bugfix is unavailable")
         return run_bugfix.delay(session_id, error_message or "")
     if graph == "review":
+        if run_review is None:
+            raise HTTPException(status_code=501, detail="Worker package not installed; review is unavailable")
         return run_review.delay(session_id)
+    if run_refactor is None:
+        raise HTTPException(status_code=501, detail="Worker package not installed; refactor is unavailable")
     return run_refactor.delay(session_id)
 
 
@@ -49,6 +61,8 @@ def index_repository(repo_path: str, force: bool = False):
     Index a repo into pgvector.
     Call this before running the agent on any new codebase.
     """
+    if index_repo is None:
+        raise HTTPException(status_code=501, detail="RAG package not installed; repo indexing is unavailable")
     try:
         result = index_repo(repo_path, force_reindex=force)
         return {"status": "indexed", **result}
