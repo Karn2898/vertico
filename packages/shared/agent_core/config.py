@@ -1,48 +1,50 @@
 import os
-import ast
-from typing import TypedDict
-
-from langgraph.graph import StateGraph, MessagesState, END
-from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import HumanMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
-
+from typing import Any
 
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY")
 
 
-from openai import OpenAI
-import os
-import sys
+class _NvidiaChatLLM:
+    """Minimal langchain-compatible wrapper around NVIDIA's OpenAI-compatible API."""
 
-_USE_COLOR = sys.stdout.isatty() and os.getenv("NO_COLOR") is None
-_REASONING_COLOR = "\033[90m" if _USE_COLOR else ""
-_RESET_COLOR = "\033[0m" if _USE_COLOR else ""
+    def __init__(self, model: str = "z-ai/glm-5.2", base_url: str = "https://integrate.api.nvidia.com/v1"):
+        self.model = model
+        self.base_url = base_url
+        self._client = None
 
-client = OpenAI(
-  base_url = "https://integrate.api.nvidia.com/v1",
-  api_key=NVIDIA_API_KEY
-)
+    def _get_client(self):
+        if self._client is None:
+            from openai import OpenAI
+            if not NVIDIA_API_KEY:
+                raise RuntimeError("NVIDIA_API_KEY is not set")
+            self._client = OpenAI(base_url=self.base_url, api_key=NVIDIA_API_KEY)
+        return self._client
+
+    def invoke(self, messages: Any, **kwargs: Any) -> Any:
+        client = self._get_client()
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=kwargs.get("temperature", 1),
+            top_p=kwargs.get("top_p", 1),
+            max_tokens=kwargs.get("max_tokens", 1024),
+        )
+        return response.choices[0].message
+
+    def astream(self, messages: Any, **kwargs: Any):
+        client = self._get_client()
+        stream = client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=kwargs.get("temperature", 1),
+            top_p=kwargs.get("top_p", 1),
+            max_tokens=kwargs.get("max_tokens", 1024),
+            stream=True,
+        )
+        for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and getattr(delta, "content", None):
+                yield delta.content
 
 
-completion = client.chat.completions.create(
-  model="z-ai/glm-5.2",
-  messages=[{"role":"user","content":""}],
-  temperature=1,
-  top_p=1,
-  max_tokens=16384,
-  seed=42,
-  
-  stream=True
-)
-
-for chunk in completion:
-  if not getattr(chunk, "choices", None):
-    continue
-  if len(chunk.choices) == 0 or getattr(chunk.choices[0], "delta", None) is None:
-    continue
-  delta = chunk.choices[0].delta
-  if getattr(delta, "content", None) is not None:
-    print(delta.content, end="")
+llm = _NvidiaChatLLM()
