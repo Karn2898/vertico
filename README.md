@@ -11,8 +11,8 @@ Vertico is an AI coding assistant designed to integrate with IDEs and help devel
 - Context-aware code suggestions
 - Refactoring guidance
 - IDE integration hooks
-- Lightweight and extensible
-
+- Lightweight and extensible. 
+ 
 ## Architecture
 
 - **`packages/`** — reusable core: `shared/agent_core` (LangGraph agent graphs, tools, memory, evaluation), `RAG` (repo indexing, embedders, retrievers, rerankers), `db` (SQLModel models, repositories, pgvector), `sandbox` (Docker-based code execution).
