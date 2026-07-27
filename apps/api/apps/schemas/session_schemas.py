@@ -5,6 +5,10 @@ from typing import Optional
 class CreateSessionRequest(BaseModel):
     filename: str
     original_code: str
+    llm_provider: str = "nvidia"
+    llm_api_key: Optional[str] = None
+    llm_model: Optional[str] = None
+    graph: str = "refactor"
 
 
 class SessionResponse(BaseModel):
@@ -14,6 +18,8 @@ class SessionResponse(BaseModel):
     iterations: int
     errors: Optional[str]
     created_at: str
+    llm_provider: str = "nvidia"
+    llm_model: Optional[str] = None
 
 
 class SessionStateResponse(BaseModel):
@@ -24,3 +30,5 @@ class SessionStateResponse(BaseModel):
     errors: Optional[str]
     iterations: int
     status: str
+    llm_provider: str = "nvidia"
+    llm_model: Optional[str] = None
