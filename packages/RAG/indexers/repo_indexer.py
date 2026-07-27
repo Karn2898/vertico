@@ -8,7 +8,10 @@ from db.repositories.embedding_repo import EmbeddingRepo
 from sqlmodel import Session
 
 from ..chunkers.code_chunker import chunk_file, CodeChunk
-from RAG.embedders.gemini_embedder import embed_batch
+try:
+    from RAG.embedders.nvidia_embedder import embed_batch
+except Exception:
+    embed_batch = None
 
 logger = logging.getLogger(__name__)
 

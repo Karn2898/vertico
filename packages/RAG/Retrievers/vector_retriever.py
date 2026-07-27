@@ -3,7 +3,10 @@ from sqlmodel import Session
 
 from db.database import engine
 from db.repositories.embedding_repo import EmbeddingRepo
-from ..embedders.gemini_embedder import embed_query
+try:
+    from ..embedders.nvidia_embedder import embed_query
+except Exception:
+    embed_query = None
 from ..rankers.reranker import rerank
 
 def retrieve(
