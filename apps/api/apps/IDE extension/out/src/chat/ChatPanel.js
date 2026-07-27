@@ -42,7 +42,6 @@ class ChatPanel {
         this.api = api;
         this.sessionManager = sessionManager;
         this.contextCollector = contextCollector;
-        this.eventSource = null;
     }
     resolveWebviewView(webviewView) {
         this._view = webviewView;
@@ -71,22 +70,20 @@ class ChatPanel {
     reveal() {
         vscode.commands.executeCommand("workbench.view.extension.verticoActivityBar", ChatPanel.viewType);
     }
-    async _handleChatMessage(text) {
+    _handleChatMessage(text) {
         const sessionId = this.sessionManager.currentSessionId;
         if (!sessionId) {
             this._postToWebview({ type: "error", text: "No active session. Open a file and run a command first." });
             return;
         }
-        const es = this.api.streamChat(sessionId, text);
-        this.eventSource = es;
-        es.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            this._postToWebview({ type: "streamChunk", ...data });
-        };
-        es.onerror = () => {
-            es.close();
-            this._postToWebview({ type: "streamEnd" });
-        };
+        this.api.streamChat(sessionId, text, {
+            onMessage: (data) => {
+                this._postToWebview({ type: "streamChunk", ...data });
+            },
+            onError: () => {
+                this._postToWebview({ type: "streamEnd" });
+            },
+        });
     }
     async _handleAcceptDiff() {
         const sessionId = this.sessionManager.currentSessionId;

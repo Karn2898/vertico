@@ -8,7 +8,6 @@ import { ContextCollector } from "../context/ContextCollector";
 export class ChatPanel implements vscode.WebviewViewProvider {
   public static readonly viewType = "vertico.chatView";
   private _view?: vscode.WebviewView;
-  private eventSource: EventSource | null = null;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -50,25 +49,21 @@ export class ChatPanel implements vscode.WebviewViewProvider {
     );
   }
 
-  private async _handleChatMessage(text: string) {
+  private _handleChatMessage(text: string) {
     const sessionId = this.sessionManager.currentSessionId;
     if (!sessionId) {
       this._postToWebview({ type: "error", text: "No active session. Open a file and run a command first." });
       return;
     }
 
-    const es = this.api.streamChat(sessionId, text);
-    this.eventSource = es;
-
-    es.onmessage = (event: any) => {
-      const data = JSON.parse(event.data);
-      this._postToWebview({ type: "streamChunk", ...data });
-    };
-
-    es.onerror = () => {
-      es.close();
-      this._postToWebview({ type: "streamEnd" });
-    };
+    this.api.streamChat(sessionId, text, {
+      onMessage: (data: any) => {
+        this._postToWebview({ type: "streamChunk", ...data });
+      },
+      onError: () => {
+        this._postToWebview({ type: "streamEnd" });
+      },
+    });
   }
 
   private async _handleAcceptDiff() {

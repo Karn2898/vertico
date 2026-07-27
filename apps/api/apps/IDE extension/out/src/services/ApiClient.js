@@ -63,16 +63,51 @@ class ApiClient {
             return { has_changes: false, diff: null };
         return await res.json();
     }
-    streamChat(sessionId, text) {
-        // In a real environment this would open an EventSource or websocket.
-        // Return a minimal EventSource-like object for runtime usage in the extension.
-        const es = {
-            onmessage: null,
-            onerror: null,
-            close() { },
-        };
-        // Attempt a simple fetch-stream or server-sent events in production.
-        return es;
+    streamChat(sessionId, text, handlers) {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const res = await fetch(`${this.baseUrl}/chat/message`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId, message: text }),
+                    signal: controller.signal,
+                });
+                if (!res.ok) {
+                    handlers.onError?.();
+                    return;
+                }
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done)
+                        break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split("\n\n");
+                    buffer = events.pop() ?? "";
+                    for (const evt of events) {
+                        const line = evt.trim();
+                        if (!line.startsWith("data:"))
+                            continue;
+                        const payload = line.slice(5).trim();
+                        if (!payload)
+                            continue;
+                        try {
+                            handlers.onMessage(JSON.parse(payload));
+                        }
+                        catch {
+                            /* ignore malformed */
+                        }
+                    }
+                }
+            }
+            catch {
+                handlers.onError?.();
+            }
+        })();
+        return () => controller.abort();
     }
 }
 exports.ApiClient = ApiClient;

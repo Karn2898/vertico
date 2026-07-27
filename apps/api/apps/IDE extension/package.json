@@ -89,7 +89,7 @@
       "properties": {
         "Vertico.apiUrl": {
           "type": "string",
-          "default": "http://localhost:3000/api",
+          "default": "http://localhost:8000/api",
           "description": "URL of the Vertico API"
         }
       }

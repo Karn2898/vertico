@@ -57,6 +57,10 @@ _repo_root = _Path(__file__).resolve().parents[2]
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
+_shared_path = _repo_root / "packages" / "shared"
+if str(_shared_path) not in sys.path:
+    sys.path.insert(0, str(_shared_path))
+
 from apps.api.apps.routes import session as session_routes
 from apps.api.apps.routes import agent as agent_routes
 from apps.api.apps.routes import chat as chat_routes
