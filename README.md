@@ -185,7 +185,7 @@ build with `dpkg-deb --build packaging/vertico vertico_0.1.0_amd64.deb` (see
 
 ## Known gaps
 
-- `infra/docker/api.Dockerfile` does not exist yet (only `worker.Dockerfle`),
+- `infra/docker/api.Dockerfile` does not exist yet (only `worker.Dockerfile`),
   so `docker compose up` will not start the API container — run it with
   `uvicorn` as shown in step 2.
 - The compose `db` service uses Postgres user `tom`, while `.env` /
