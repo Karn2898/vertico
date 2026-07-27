@@ -11,16 +11,21 @@ import sys
 from pathlib import Path
 
 graphs = None
-llm = None
 try:
-   graphs = importlib.import_module("agent_core.graphs")
-   llm = importlib.import_module("agent_core.config").llm
+    graphs = importlib.import_module("agent_core.graphs")
 except Exception:
-   repo_root = Path(__file__).resolve().parents[2]
-   shared_path = repo_root / "packages" / "shared"
-   sys.path.append(str(shared_path))
-   graphs = importlib.import_module("agent_core.graphs")
-   llm = importlib.import_module("agent_core.config").llm
+    repo_root = Path(__file__).resolve().parents[2]
+    shared_path = repo_root / "packages" / "shared"
+    sys.path.insert(0, str(shared_path))
+    graphs = importlib.import_module("agent_core.graphs")
+
+
+def _get_llm(session: dict):
+    provider = session.get("llm_provider") 
+    api_key = session.get("llm_api_key")
+    model = session.get("llm_model")
+    config = importlib.import_module("agent_core.config")
+    return config.get_llm(provider=provider, api_key=api_key, model=model)
 
 router=APIRouter(prefix="/chat",tags=["chat"])
 
