@@ -20,7 +20,14 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @router.post("/", response_model=SessionResponse)
 def create(req: CreateSessionRequest):
-    session = create_session(req.filename, req.original_code)
+    session = create_session(
+        req.filename,
+        req.original_code,
+        graph=req.graph,
+        llm_provider=req.llm_provider,
+        llm_api_key=req.llm_api_key,
+        llm_model=req.llm_model,
+    )
     return _to_response(session)
 
 
@@ -68,4 +75,6 @@ def _to_response(session: dict) -> SessionResponse:
         iterations=state["iterations"],
         errors=state["errors"],
         created_at=session["created_at"],
+        llm_provider=session.get("llm_provider", "nvidia"),
+        llm_model=session.get("llm_model"),
     )
