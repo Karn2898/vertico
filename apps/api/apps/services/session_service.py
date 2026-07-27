@@ -20,7 +20,14 @@ def get_repo(dbdb: Session = Depends(get_session)) -> "SessionRepo":
 sessions: dict[str, dict] = {}
 
 
-def create_session(filename: str, original_code: str, graph: str = "refactor") -> dict:
+def create_session(
+    filename: str,
+    original_code: str,
+    graph: str = "refactor",
+    llm_provider: str = "nvidia",
+    llm_api_key: Optional[str] = None,
+    llm_model: Optional[str] = None,
+) -> dict:
     session_id = str(uuid.uuid4())
 
     sessions[session_id] = {
@@ -29,6 +36,9 @@ def create_session(filename: str, original_code: str, graph: str = "refactor") -
         "graph": graph,
         "status": "idle",
         "created_at": datetime.utcnow().isoformat(),
+        "llm_provider": llm_provider,
+        "llm_api_key": llm_api_key,
+        "llm_model": llm_model,
         "agent_state": {
             "original_code": original_code,
             "review_notes": "",
