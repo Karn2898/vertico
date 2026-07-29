@@ -1,3 +1,5 @@
+![Vertico Logo](./Vertico.png)
+
 # vertico
 
 AI coding assistant to be used in IDE.
@@ -110,7 +112,8 @@ make index-repo path=/path/to/repo
 
 ```bash
 cd apps/api/apps/IDE\ extension
-npm run build     # compiles src/ -> out/extension.js
+npm run build     # compiles TypeScript → out/
+npm run package   # creates a .vsix file in the extension directory
 ```
 
 Then in VS Code:

@@ -17,6 +17,7 @@
   "build": {
     "appId": "ai.vertico.desktop",
     "productName": "Vertico",
+    "icon": "icon",
     "files": [
       "main.js",
       "preload.js",

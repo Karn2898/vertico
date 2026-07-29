@@ -1,0 +1,17 @@
+.vscodeignore
+node_modules
+out/**/*.map
+**/*.ts
+**/*.tsx
+**/tsconfig.json
+**/.eslintrc*
+**/.prettierrc*
+.git
+.github
+.gitignore
+**/*.md
+!README.md
+**/coverage
+**/.nyc_output
+vite.config.*
+dist
