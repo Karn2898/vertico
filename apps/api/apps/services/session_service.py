@@ -3,6 +3,7 @@ from fastapi import HTTPException
 import uuid
 from fastapi import Depends
 from sqlmodel import Session
+from typing import Optional
 
 # `db` package is optional for the in-memory session store.
 try:
