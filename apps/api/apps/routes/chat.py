@@ -14,10 +14,10 @@ graphs = None
 try:
     graphs = importlib.import_module("agent_core.graphs")
 except Exception:
-    repo_root = Path(__file__).resolve().parents[2]
-    shared_path = repo_root / "packages" / "shared"
-    sys.path.insert(0, str(shared_path))
-    graphs = importlib.import_module("agent_core.graphs")
+   repo_root = Path(__file__).resolve().parents[4]
+   shared_path = repo_root / "packages" / "shared"
+   sys.path.insert(0, str(shared_path))
+   graphs = importlib.import_module("agent_core.graphs")
 
 
 def _get_llm(session: dict):
