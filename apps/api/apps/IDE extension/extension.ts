@@ -11,7 +11,7 @@ let sessionManager: SessionManager;
 export function activate(context: vscode.ExtensionContext) {
   const apiUrl = vscode.workspace
     .getConfiguration("Vertico")
-    .get<string>("apiUrl", "http://localhost:8000/api");
+    .get<string>("apiUrl", "http://localhost:8000");
 
   const api = new ApiClient(apiUrl);
   sessionManager = new SessionManager(api);
