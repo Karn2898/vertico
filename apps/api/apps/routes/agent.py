@@ -16,7 +16,7 @@ graphs = None
 try:
     graphs = importlib.import_module("agent_core.graphs")
 except Exception:
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = Path(__file__).resolve().parents[4]
     shared_path = repo_root / "packages" / "shared"
     sys.path.append(str(shared_path))
     graphs = importlib.import_module("agent_core.graphs")
