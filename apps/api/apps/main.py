@@ -53,7 +53,7 @@ app=FastAPI(
 # Make the top-level `apps` package importable for route modules.
 import sys
 from pathlib import Path as _Path
-_repo_root = _Path(__file__).resolve().parents[2]
+_repo_root = _Path(__file__).resolve().parents[3]
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
