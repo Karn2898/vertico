@@ -26,7 +26,17 @@ export interface DiffResult {
 }
 
 export class ApiClient {
-  constructor(private baseUrl: string) {}
+  constructor(public baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    if (this.baseUrl.endsWith("/api")) {
+      this.baseUrl = this.baseUrl.slice(0, -4);
+    }
+  }
+
+  async checkHealth(): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/health`);
+    if (!res.ok) throw new Error(`health check failed: ${res.statusText}`);
+  }
 
   async createSession(filename: string, code: string): Promise<Session> {
     const res = await fetch(`${this.baseUrl}/sessions`, {
