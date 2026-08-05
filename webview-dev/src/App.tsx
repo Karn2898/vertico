@@ -25,7 +25,7 @@ export default function App() {
 
   useEffect(() => {
     api
-      .getTaskStatus("__ping__")
+      .checkHealth()
       .then(() => setApiStatus("connected"))
       .catch(() => setApiStatus("offline (start API on :8000)"));
 
