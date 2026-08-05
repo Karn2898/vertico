@@ -4,6 +4,15 @@ exports.ApiClient = void 0;
 class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
+        this.baseUrl = this.baseUrl.replace(/\/+$/, "");
+        if (this.baseUrl.endsWith("/api")) {
+            this.baseUrl = this.baseUrl.slice(0, -4);
+        }
+    }
+    async checkHealth() {
+        const res = await fetch(`${this.baseUrl}/health`);
+        if (!res.ok)
+            throw new Error(`health check failed: ${res.statusText}`);
     }
     async createSession(filename, code) {
         const res = await fetch(`${this.baseUrl}/sessions`, {
