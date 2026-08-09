@@ -1,13 +1,13 @@
-[tool.poetry]
-name="vetico-rag"
-version="0.1.0"
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry.dependencies]
-python="^3.11"
-openai=""#nvidia embeddings
-pgvector=""
-sqlmodel=""
-gitpython=""
-tree-sitter=""
-tiktoken=""
-vertico-db={path="../db , develop=True"}
+[project]
+name = "vertico-rag"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["openai", "pgvector", "sqlmodel", "gitpython", "tree-sitter", "tiktoken"]
+
+[tool.setuptools]
+packages = ["chunker", "embedder", "indexers", "rerankers", "Retrievers"]
+include-package-data = true
