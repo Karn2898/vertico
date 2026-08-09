@@ -16,7 +16,7 @@ target_metadata=SQLModel.metadata
 
 DATABASE_URL=os.environ.get(
     "DATABASE_URL",
-     "postgresql://vertico:vertico@localhost:5432/vertico"
+    "postgresql://tom:vertoco123@localhost:5432/vertico"
 )
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
