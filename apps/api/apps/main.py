@@ -6,6 +6,17 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import sys
+from pathlib import Path as _Path
+
+_repo_root = _Path(__file__).resolve().parents[3]
+_packages_root = _repo_root / "packages"
+_db_path = _repo_root / "packages" / "db"
+_shared_path = _repo_root / "packages" / "shared"
+
+for _path in (str(_repo_root), str(_packages_root), str(_db_path), str(_shared_path)):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,6 +49,8 @@ async def lifespan(app: FastAPI):
         logger.info("pgvector enabled ok")
     except ModuleNotFoundError:
         logger.warning("db package not importable; skipping DB init")
+    except Exception as e:
+        logger.warning("DB init failed; skipping DB init: %s", e)
 
     yield
 
@@ -50,21 +63,10 @@ app=FastAPI(
     lifespan=lifespan,
 )
 
-# Make the top-level `apps` package importable for route modules.
-import sys
-from pathlib import Path as _Path
-_repo_root = _Path(__file__).resolve().parents[3]
-if str(_repo_root) not in sys.path:
-    sys.path.insert(0, str(_repo_root))
-
-_shared_path = _repo_root / "packages" / "shared"
-if str(_shared_path) not in sys.path:
-    sys.path.insert(0, str(_shared_path))
-
-from apps.api.apps.routes import session as session_routes
-from apps.api.apps.routes import agent as agent_routes
-from apps.api.apps.routes import chat as chat_routes
-from apps.api.apps.routes import diffs as diffs_routes
+from .routes import session as session_routes
+from .routes import agent as agent_routes
+from .routes import chat as chat_routes
+from .routes import diffs as diffs_routes
 
 app.include_router(session_routes.router)
 app.include_router(agent_routes.router)

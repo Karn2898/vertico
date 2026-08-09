@@ -11,6 +11,6 @@
     "allowJs": true,
     "types": ["node"]
   },
-  "include": ["src/**/*", "apps/api/apps/IDE extension/webview.js", "apps/api/apps/IDE extension/webview.tsx", "apps/api/apps/IDE extension/extension.js", "apps/api/apps/IDE extension/extension.ts"],
+  "include": ["src/**/*", "apps/api/apps/ide-extension/webview.js", "apps/api/apps/ide-extension/webview.tsx", "apps/api/apps/ide-extension/extension.js", "apps/api/apps/ide-extension/extension.ts"],
   "exclude": ["node_modules", "dist", "build"]
 }

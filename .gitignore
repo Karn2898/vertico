@@ -1,4 +1,3 @@
-cat > .gitignore <<'EOF'
 # Secrets / env
 .env
 .env.local
@@ -16,7 +15,7 @@ node_modules/
 webview-dev/node_modules/
 
 # Build output
-apps/api/apps/IDE extension/out/
+apps/api/apps/ide-extension/out/
 
 # Editor / tooling
 .vscode/
@@ -27,4 +26,3 @@ apps/api/apps/IDE extension/out/
 *.vsix
 dist/
 build/
-EOF

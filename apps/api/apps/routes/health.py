@@ -8,7 +8,13 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 # Ensure top-level packages (db, agent_core, sandbox) are importable.
 _repo_root = Path(__file__).resolve().parents[4]
-for p in (str(_repo_root), str(_repo_root / "packages" / "shared")):
+_packages_root = _repo_root / "packages"
+for p in (
+    str(_repo_root),
+    str(_packages_root),
+    str(_repo_root / "packages" / "db"),
+    str(_repo_root / "packages" / "shared"),
+):
     if p not in sys.path:
         sys.path.insert(0, p)
 

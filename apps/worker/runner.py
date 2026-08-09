@@ -1,8 +1,23 @@
 from celery import Task
 from celery.utils.log import get_task_logger
+import sys
+from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parents[3]
+_packages_root = _repo_root / "packages"
+for _path in (
+    str(_repo_root),
+    str(_packages_root),
+    str(_repo_root / "packages" / "db"),
+    str(_repo_root / "packages" / "shared"),
+):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 from .celery_app import app
-from .task_handlers import handle_refactor, handle_bugfix, handle_review
+from .task_handlers.refractor import handle_refactor
+from .task_handlers.bugfix import handle_bugfix
+from .task_handlers.review import handle_review
 from db.repositories.session_repo import SessionRepo
 from db.database import engine
 from sqlmodel import Session

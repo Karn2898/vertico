@@ -7,15 +7,4 @@ python = "^3.11"
 sqlmodel = "*"
 psycopg2-binary = "*"
 alembic = "*"
-pgvector = "*"          
-
-[tool.poetry]
-name = "vertico-db"
-version = "0.1.0"
-
-[tool.poetry.dependencies]
-python = "^3.11"
-sqlmodel = "*"
-psycopg2-binary = "*"
-alembic = "*"
-pgvector = "*"         
+pgvector = "*"

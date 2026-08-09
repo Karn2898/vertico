@@ -1,6 +1,8 @@
 from sqlmodel import create_engine, Session, SQLModel
 import os
 
+from . import models  # noqa: F401 - registers SQLModel tables
+
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://tom:vertoco123@localhost:5432/vertico"
@@ -16,5 +18,4 @@ def get_session():
 
 
 def create_db_and_tables():
-    
     SQLModel.metadata.create_all(engine)

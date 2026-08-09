@@ -1,10 +1,10 @@
 # Makefile
 
 db-up:
-	docker compose -f infra/docker/docker-compose.yml up db -d
+	docker compose -f infra/docker/docker-compose.yaml up db -d
 
 db-down:
-	docker compose -f infra/docker/docker-compose.yml down
+	docker compose -f infra/docker/docker-compose.yaml down
 
 migrate:
 	cd packages/db && alembic upgrade head
@@ -13,7 +13,7 @@ migrate-new:
 	cd packages/db && alembic revision --autogenerate -m "$(name)"
 
 db-shell:
-	docker exec -it copilot-db psql -U copilot -d copilot
+	docker exec -it vertico-db psql -U tom -d vertico
 
 # run order:
 #
@@ -36,13 +36,13 @@ index-force:
 
 
 worker-up:
-	docker compose -f infra/docker/docker-compose.yml up redis worker -d
+	docker compose -f infra/docker/docker-compose.yaml up redis worker -d
 
 worker-down:
-	docker compose -f infra/docker/docker-compose.yml down worker redis
+	docker compose -f infra/docker/docker-compose.yaml down worker redis
 
 worker-logs:
-	docker compose -f infra/docker/docker-compose.yml logs -f worker
+	docker compose -f infra/docker/docker-compose.yaml logs -f worker
 
 worker-dev:
 	# Run worker locally without Docker (dev only)
@@ -90,7 +90,7 @@ sandbox-clean:
 
 # IDE Extension
 
-EXTENSION_DIR := apps/api/apps/IDE\ extension
+EXTENSION_DIR := apps/api/apps/ide-extension
 
 ext-install:
 	cd $(EXTENSION_DIR) && npm install

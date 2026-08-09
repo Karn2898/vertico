@@ -1,6 +1,12 @@
 pyproject.toml
 apps/main.py
 apps/middleware/__init__.py
+apps/routes/__init__.py
+apps/routes/agent.py
+apps/routes/chat.py
+apps/routes/diffs.py
+apps/routes/health.py
+apps/routes/session.py
 apps/schemas/__init__.py
 apps/schemas/agent.py
 apps/schemas/session_schemas.py

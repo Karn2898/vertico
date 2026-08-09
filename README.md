@@ -21,7 +21,7 @@ Vertico is an AI coding assistant designed to integrate with IDEs and help devel
 - **`apps/api/`** — FastAPI backend (routes, schemas, services, middleware).
 - **`apps/worker/`** — Celery worker running refactor / bugfix / review tasks.
 - **`src/`** — VS Code extension (TypeScript) + React webview components.
-- **`apps/api/apps/IDE extension/`** — the packaged VS Code extension entrypoint.
+- **`apps/api/apps/ide-extension/`** — the packaged VS Code extension entrypoint.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ pip install -r Requirements.txt
 pip install -e packages/db -e packages/RAG -e packages/sandbox
 
 # install extension deps
-cd apps/api/apps/IDE\ extension && npm install && cd ../../..
+cd apps/api/apps/ide-extension && npm install && cd ../../..
 ```
 
 Copy `.env` if needed and set your key:
@@ -111,7 +111,7 @@ make index-repo path=/path/to/repo
 ### 5. Use it in VS Code
 
 ```bash
-cd apps/api/apps/IDE\ extension
+cd apps/api/apps/ide-extension
 npm run build     # compiles TypeScript → out/
 npm run package   # creates a .vsix file in the extension directory
 ```

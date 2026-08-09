@@ -1,0 +1,135 @@
+{
+  "name": "vertico",
+  "displayName": "Vertico",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Karn2898/vertico.git"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Code Analysis"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/apps/api/apps/ide-extension/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "verticoActivityBar",
+          "title": "Vertico",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "verticoActivityBar": [
+        {
+          "type": "webview",
+          "id": "vertico.chatView",
+          "name": "Vertico Chat",
+          "icon": "$(comment-discussion)",
+          "contextualTitle": "Vertico"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vertico.startChat",
+        "title": "Start Vertico",
+        "category": "Vertico",
+        "icon": "$(robot)"
+      },
+      {
+        "command": "vertico.showChat",
+        "title": "Show Chat",
+        "category": "Vertico"
+      },
+      {
+        "command": "Vertico.reviewFile",
+        "title": "Review File"
+      },
+      {
+        "command": "vertico.refactorFile",
+        "title": "Refactor File"
+      },
+      {
+        "command": "Vertico.fixbug",
+        "title": "Fix Bug"
+      },
+      {
+        "command": "vertico.indexRepo",
+        "title": "Index Repository"
+      },
+      {
+        "command": "vertico.acceptDiff",
+        "title": "Vertico: Accept Changes"
+      },
+      {
+        "command": "vertico.rejectDiff",
+        "title": "Vertico: Reject Changes"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vertico.showChat",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v"
+      },
+      {
+        "command": "vertico.refactorFile",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r"
+      }
+    ],
+    "configuration": {
+      "title": "Vertico",
+      "properties": {
+        "Vertico.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "URL of the Vertico API"
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vertico.refactorFile",
+          "group": "vertico"
+        },
+        {
+          "command": "Vertico.fixbug",
+          "group": "vertico"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "vertico.showChat",
+          "when": "view == vertico.chatView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p tsconfig.json",
+    "watch": "tsc -watch -p tsconfig.json",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "build": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.4"
+  }
+}

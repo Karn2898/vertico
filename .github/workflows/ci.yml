@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-    
-     - name: Set up Python
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -21,12 +21,13 @@ jobs:
         run: |
           pip install pytest pytest-asyncio pytest-mock
           pip install -e packages/db
-          pip install -e packages/rag
+          pip install -e packages/RAG
           pip install -e packages/sandbox
-          pip install -e packages/agent-core
           pip install -e apps/api
 
-         - name: Run tests
+      # TODO: no tests/ directory exists yet in this repo — add one before
+      # relying on this step; it currently has nothing to run.
+      - name: Run tests
         run: pytest tests/unit/ -v --tb=short
 
       - name: Lint
@@ -34,7 +35,7 @@ jobs:
           pip install ruff
           ruff check packages/ apps/
 
-     build-and-push:
+  build-and-push:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
@@ -48,14 +49,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-
-       - name: Build and push API image
+      # TODO: infra/docker/api.Dockerfile does not exist yet (see README
+      # "Known gaps"). This step will fail the build until it's added.
+      - name: Build and push API image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: infra/docker/api.Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/vertico/api:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/vertico/api:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/vertico/api:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/vertico/api:latest
 
       - name: Build and push worker image
         uses: docker/build-push-action@v5
@@ -63,15 +67,18 @@ jobs:
           context: .
           file: infra/docker/worker.Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/vertico/worker:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/vertico/worker:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/vertico/worker:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/vertico/worker:latest
 
-
-deploy:
+  deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
+      # TODO: infra/deploy/docker-compose.prod.yml does not exist yet in
+      # this repo — add it before this job can succeed.
       - name: Deploy to Oracle VM
         uses: appleboy/ssh-action@v1
         with:
@@ -79,8 +86,8 @@ deploy:
           username: ubuntu
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            cd /opt/copilot-agent
+            cd /opt/vertico
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f infra/deploy/docker-compose.prod.yml pull
             docker compose -f infra/deploy/docker-compose.prod.yml up -d --remove-orphans
-            docker system prune -f  
+            docker system prune -f

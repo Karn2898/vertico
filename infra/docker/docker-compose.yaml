@@ -51,6 +51,7 @@ services:
     environment:
       DATABASE_URL: postgresql://tom:vertoco123@db:5432/vertico
       REDIS_URL: redis://redis:6379/0
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       db:
