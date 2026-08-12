@@ -22,7 +22,7 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 def create(req: CreateSessionRequest):
     session = create_session(
         req.filename,
-        req.original_code,
+        req.code,
         graph=req.graph,
         llm_provider=req.llm_provider,
         llm_api_key=req.llm_api_key,
