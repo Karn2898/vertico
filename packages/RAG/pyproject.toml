@@ -9,5 +9,5 @@ requires-python = ">=3.11"
 dependencies = ["openai", "pgvector", "sqlmodel", "gitpython", "tree-sitter", "tiktoken"]
 
 [tool.setuptools]
-packages = ["chunker", "embedder", "indexers", "rerankers", "Retrievers"]
+packages = ["chunker", "embedder", "indexers", "rerankers", "retrievers"]
 include-package-data = true
