@@ -23,7 +23,7 @@ sessions: dict[str, dict] = {}
 
 def create_session(
     filename: str,
-    original_code: str,
+    code: str,
     graph: str = "refactor",
     llm_provider: str = "nvidia",
     llm_api_key: Optional[str] = None,
@@ -41,9 +41,9 @@ def create_session(
         "llm_api_key": llm_api_key,
         "llm_model": llm_model,
         "agent_state": {
-            "original_code": original_code,
+            "original_code": code,
             "review_notes": "",
-            "refactored_code": original_code,
+            "refactored_code": code,
             "errors": None,
             "iterations": 0,
         }
