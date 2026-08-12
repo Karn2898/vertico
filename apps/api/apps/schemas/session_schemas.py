@@ -4,7 +4,7 @@ from typing import Optional
 
 class CreateSessionRequest(BaseModel):
     filename: str
-    original_code: str
+    code: str
     llm_provider: str = "nvidia"
     llm_api_key: Optional[str] = None
     llm_model: Optional[str] = None
