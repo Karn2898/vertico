@@ -6,6 +6,7 @@ from typing import Optional
 
 # Prefer the shared session store and agent graphs
 from ..services.session_service import sessions, _require
+from celery import Celery
 from celery.result import AsyncResult
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -29,8 +30,10 @@ except Exception:  # pragma: no cover - rag package not installed
 # Celery task entrypoints
 try:
     from apps.worker.runner import run_refactor, run_bugfix, run_review
+    from apps.worker.celery_app import app as celery_app
 except Exception:  # pragma: no cover - worker package not installed
     run_refactor = run_bugfix = run_review = None
+    celery_app = None
 
 VALID_GRAPHS = ("refactor", "bugfix", "review")
 
@@ -110,7 +113,7 @@ def get_task_status(task_id: str):
     Poll task status by Celery task_id.
     States: PENDING -> STARTED -> SUCCESS | FAILURE
     """
-    result = AsyncResult(task_id)
+    result = AsyncResult(task_id, app=celery_app) if celery_app else AsyncResult(task_id)
     return {
         "task_id": task_id,
         "state": result.state,
