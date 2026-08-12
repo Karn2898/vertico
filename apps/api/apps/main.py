@@ -8,8 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import sys
 from pathlib import Path as _Path
+from dotenv import load_dotenv
 
-_repo_root = _Path(__file__).resolve().parents[3]
+load_dotenv()
+
+_repo_root = _Path(__file__).resolve().parents[2]
 _packages_root = _repo_root / "packages"
 _db_path = _repo_root / "packages" / "db"
 _shared_path = _repo_root / "packages" / "shared"
@@ -40,13 +43,16 @@ async def lifespan(app: FastAPI):
         logger.error(f"Agent graph failed to compile:{e}")
 
     try:
-        from db.database import create_db_and_tables
-        create_db_and_tables()
-        logger.info("DB tables created")
-
         from db.vector.pgvector import enable_pgvector
         enable_pgvector()
         logger.info("pgvector enabled ok")
+    except Exception as e:
+        logger.warning("pgvector enable failed; skipping: %s", e)
+
+    try:
+        from db.database import create_db_and_tables
+        create_db_and_tables()
+        logger.info("DB tables created")
     except ModuleNotFoundError:
         logger.warning("db package not importable; skipping DB init")
     except Exception as e:
