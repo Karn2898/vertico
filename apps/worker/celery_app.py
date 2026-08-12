@@ -1,6 +1,9 @@
 from celery import Celery
 from celery.utils.log import get_task_logger
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
