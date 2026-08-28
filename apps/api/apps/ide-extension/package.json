@@ -123,7 +123,8 @@
     "watch": "tsc -watch -p tsconfig.json",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
-    "build": "npm run compile"
+    "build:webview": "cd ../../../../webview-dev && npm install && npm run build",
+    "build": "npm run build:webview && npm run compile"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

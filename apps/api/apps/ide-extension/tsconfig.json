@@ -16,9 +16,12 @@
   },
   "include": [
     "extension.ts",
-    "webview.tsx",
-    "../../../src/**/*.ts",
-    "../../../src/**/*.tsx"
+    "../../../src/chat/**/*.ts",
+    "../../../src/services/**/*.ts",
+    "../../../src/session/**/*.ts",
+    "../../../src/diff/**/*.ts",
+    "../../../src/context/**/*.ts",
+    "../../../src/api/**/*.ts"
   ],
-  "exclude": ["node_modules", "out", "dist", "build"]
+  "exclude": ["node_modules", "out", "dist", "build", "src/components"]
 }
