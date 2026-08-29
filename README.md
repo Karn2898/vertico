@@ -26,8 +26,9 @@ Vertico is an AI coding assistant designed to integrate with IDEs and help devel
 
 - Python 3.12 (a venv is provided at `vertico/`)
 - Node.js + npm (for the extension)
-- Docker (for Postgres + Redis)
 - An LLM API key — the backend reads `NVIDIA_API_KEY` from `.env`
+- A Postgres database with pgvector (local or cloud — see below)
+- A Redis instance (local or cloud — see below)
 
 ## Setup
 
@@ -52,18 +53,43 @@ cp .env .env.local   # or just edit .env
 
 ## Run order
 
-### 1. Start Postgres + Redis
+### 1. Set up Postgres + Redis
+
+**Option A: Local (Docker)**
 
 ```bash
 docker compose -f infra/docker/docker-compose.yaml up -d db redis
 ```
 
 This starts `vertico-db` (Postgres user `tom` / password `vertoco123` / db `vertico`)
-and `vertico-redis`. Then create the tables and enable pgvector:
+and `vertico-redis`.
 
-```bash
-make migrate        # cd packages/db && alembic upgrade head
+**Option B: Cloud (no Docker required)**
+
+*Postgres with pgvector — use [Supabase](https://supabase.com):*
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **Settings → Database → Connection string** and copy the URI
+3. In the **SQL Editor**, run: `CREATE EXTENSION IF NOT EXISTS vector;`
+
+*Redis — use [Upstash](https://upstash.com):*
+1. Create a new database at [upstash.com](https://upstash.com)
+2. Copy the connection string (use `rediss://` for TLS)
+
+**Configure `.env`:**
+
 ```
+DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+REDIS_URL=rediss://default:[password]@host:port
+```
+
+**Run migrations:**
+
+```powershell
+$env:DATABASE_URL="your-supabase-connection-string"
+cd packages/db; python -m alembic upgrade head
+```
+
+Then create the tables and enable pgvector:
 
 ### 2. Start the API
 
@@ -72,8 +98,8 @@ The API runs from the repo root (it imports `apps.*`, `db.*`, `agent_core.*`).
 ```bash
 cd /workspaces/vertico
 source vertico/bin/activate
-cd apps/api
-uvicorn apps.main:app --reload --port 8000
+
+
 ```
 
 Verify:
@@ -107,29 +133,43 @@ make index-repo path=/path/to/repo
 # or from the VS Code command palette: "Index Repository"
 ```
 
-### 5. Use it in VS Code
+### 5. VS Code Extension Development
+
+**Install dependencies:**
 
 ```bash
 cd apps/api/apps/ide-extension
-npm run build     # compiles TypeScript → out/
-npm run package   # creates a .vsix file in the extension directory
+npm install
 ```
 
-Then in VS Code:
+**Build (includes webview UI):**
 
-1. Open this repo as the workspace.
+```bash
+npm run build    # builds webview-dev, then compiles TypeScript → out/
+```
+
+**Run in VS Code:**
+
+1. Open this repo as the workspace in VS Code.
 2. Press **F5** (Run Extension) to launch an Extension Development Host.
-3. Open a Python file and run commands from the palette (Ctrl+Shift+P):
+3. In the new VS Code window, open a Python file and run commands from the palette (Ctrl+Shift+P):
    - **Refactor File** (Ctrl+Shift+R) — enqueues the `refactor` graph
    - **Fix Bug** — prompts for an error message, enqueues `bugfix`
    - **Review File** — enqueues `review`
    - **Start Vertico** (Ctrl+Shift+V) — opens the chat panel
    - **Index Repository** — indexes the open workspace into pgvector
 
-> **Note:** the extension's `apiUrl` defaults to `http://localhost:3000/api`
-> (see `Vertico.apiUrl` in `package.json` / `extension.ts`). Your API listens on
-> port `8000`, so set `Vertico.apiUrl` to `http://localhost:8000` (or update
-> `extension.ts`) so the extension can reach the backend.
+**Package as `.vsix`:**
+
+```bash
+npm run package   # creates a .vsix file in the extension directory
+```
+
+> **Configuration:** the extension's `apiUrl` defaults to `http://localhost:8000`
+> (see `Vertico.apiUrl` in `package.json`). To change it, add this to your VS Code settings:
+> ```json
+> "Vertico.apiUrl": "http://localhost:8000"
+> ```
 
 ## Desktop app (Electron + `.deb`)
 
@@ -198,6 +238,9 @@ build with `dpkg-deb --build packaging/vertico vertico_0.1.0_amd64.deb` (see
   installed (`pip install -e packages/db`) or the in-memory session store is used.
 - `packages/db/pyproject.toml` has a duplicated `[tool.poetry]` block that breaks
   `pip install -e packages/db`; consolidate it before installing the DB package.
+- On Windows, `make` is not available — run commands directly:
+  - `cd packages/db; python -m alembic upgrade head` instead of `make migrate`
+- On Windows, set environment variables with `$env:VAR="value"` before running commands
 
 ## Contributing
 
