@@ -4,7 +4,7 @@ from sqlmodel import Session
 from db.database import engine
 from db.repositories.embedding_repo import EmbeddingRepo
 try:
-    from ..embedder.nvidia_embedder import embed_query
+    from embedder.nvidia_embedder import embed_query
 except Exception:
     embed_query = None
 from ..rerankers.reranker import rerank
