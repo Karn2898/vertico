@@ -13,4 +13,15 @@ export default defineConfig({
     },
     extensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
   },
+  build: {
+    outDir: path.resolve(__dirname, "..", "apps/api/apps/ide-extension/webview/dist"),
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/index.js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/index[extname]",
+      },
+    },
+  },
 });
