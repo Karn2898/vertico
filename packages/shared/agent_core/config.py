@@ -167,3 +167,6 @@ def get_llm(
 
 def get_default_provider() -> str:
     return "nvidia"
+
+
+llm = get_llm()
