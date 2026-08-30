@@ -1,6 +1,7 @@
 import subprocess
 
-from .config import llm, tool
+from langchain_core.tools import tool
+from .config import llm
 
 try:
     from sandbox.executors.python_executor import PythonExecutor

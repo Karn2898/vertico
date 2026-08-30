@@ -1,54 +1,27 @@
 import os
 from typing import Any, Optional
 
+from langchain_openai import ChatOpenAI
+
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY")
 
 
-class _OpenAICompatibleLLM:
-    """Minimal wrapper around any OpenAI-compatible API (NVIDIA, OpenAI, DeepSeek)."""
+class _OpenAICompatibleLLM(ChatOpenAI):
+    """LangChain-compatible wrapper around any OpenAI-compatible API (NVIDIA, OpenAI, DeepSeek)."""
 
     def __init__(
         self,
         api_key: str,
         base_url: str = "https://integrate.api.nvidia.com/v1",
         model: str = "z-ai/glm-5.2",
+        **kwargs: Any,
     ):
-        self.model = model
-        self.base_url = base_url
-        self._api_key = api_key
-        self._client = None
-
-    def _get_client(self):
-        if self._client is None:
-            from openai import OpenAI
-            self._client = OpenAI(base_url=self.base_url, api_key=self._api_key)
-        return self._client
-
-    def invoke(self, messages: Any, **kwargs: Any) -> Any:
-        client = self._get_client()
-        response = client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=kwargs.get("temperature", 1),
-            top_p=kwargs.get("top_p", 1),
-            max_tokens=kwargs.get("max_tokens", 1024),
+        super().__init__(
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            **kwargs,
         )
-        return response.choices[0].message
-
-    def astream(self, messages: Any, **kwargs: Any):
-        client = self._get_client()
-        stream = client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=kwargs.get("temperature", 1),
-            top_p=kwargs.get("top_p", 1),
-            max_tokens=kwargs.get("max_tokens", 1024),
-            stream=True,
-        )
-        for chunk in stream:
-            delta = chunk.choices[0].delta if chunk.choices else None
-            if delta and getattr(delta, "content", None):
-                yield delta.content
 
 
 class _GeminiLLM:

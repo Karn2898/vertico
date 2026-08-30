@@ -4,6 +4,7 @@ docker
 fastapi
 gitpython
 google-generativeai
+langchain-openai
 langchain
 langchain-core
 langchain-google-genai
