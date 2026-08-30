@@ -13,7 +13,7 @@ class _OpenAICompatibleLLM(ChatOpenAI):
         self,
         api_key: str,
         base_url: str = "https://integrate.api.nvidia.com/v1",
-        model: str = "z-ai/glm-5.2",
+        model: str = "nvidia/nemotron-3.5-lightning-30b-a3b",
         **kwargs: Any,
     ):
         super().__init__(
@@ -72,8 +72,12 @@ class _ClaudeLLM:
 _PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
-        "model": "z-ai/glm-5.2",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
         "requires_key": False,
+        "extra_body": {
+            "chat_template_kwargs": {"enable_thinking": True},
+            "reasoning_budget": 16384,
+        },
     },
     "openai": {
         "base_url": "https://api.openai.com/v1",
@@ -116,6 +120,7 @@ def get_llm(
             api_key=key,
             base_url=cfg["base_url"],
             model=model or cfg["model"],
+            extra_body=cfg.get("extra_body", {}),
         )
 
     if provider == "gemini":
