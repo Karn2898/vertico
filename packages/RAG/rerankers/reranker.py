@@ -17,7 +17,7 @@ def rerank(query: str , results: list[Any], top_k : int=5):
 
         path_terms=set(row.file_path.lower().replace ("/","").replace("_","").split())
         path_overlap=query_terms & path_terms
-        bonus+=;en(path_overlap)*0.02
+        bonus += len(path_overlap) * 0.02
 
         line_count=row.end_line -row.start_line
         size_penalty=min(line_count/500,0.1)
@@ -27,14 +27,14 @@ def rerank(query: str , results: list[Any], top_k : int=5):
         scored.append({
             "content": row.content,
             "file_path": row.file_path,
-            "chunk_name":row.chunk_name,
-            "chunk_type":row.chunk_type,
+            "chunk_name": row.chunk_name,
+            "chunk_type": row.chunk_type,
             "language": row.language,
             "start_line": row.start_line,
             "end_line": row.end_line,
             "score": round(final_score, 4),
         })
 
-        scored.sort(key=lambda x:s["score"],reverse=True)
-        return scored[:top_k]
+    scored.sort(key=lambda x: x["score"], reverse=True)
+    return scored[:top_k]
     

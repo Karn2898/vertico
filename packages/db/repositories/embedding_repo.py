@@ -61,4 +61,4 @@ class EmbeddingRepo:
         statement=select(EmbeddingModel).where(
             EmbeddingModel.repo_path==repo_path
         ).limit(1)
-        return self..session.exec(statement).first() is not None
+        return self.session.exec(statement).first() is not None
