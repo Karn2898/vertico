@@ -155,6 +155,7 @@ async def _stream_chat(session_id: str, user_message: str):
 
    session = sessions[session_id]
    agent_state = session["agent_state"]
+   llm = _get_llm(session)
 
    system_prompt = f"""You are a coding assistant helping a developer refactor Python code.
 Current session context:
