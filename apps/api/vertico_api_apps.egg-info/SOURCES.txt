@@ -12,7 +12,6 @@ apps/schemas/agent.py
 apps/schemas/session_schemas.py
 apps/services/__init__.py
 apps/services/session_service.py
-tests/test_chat_stream.py
 vertico_api_apps.egg-info/PKG-INFO
 vertico_api_apps.egg-info/SOURCES.txt
 vertico_api_apps.egg-info/dependency_links.txt
