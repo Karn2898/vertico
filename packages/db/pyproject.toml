@@ -1,10 +1,19 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "vertico-db"
 version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "sqlmodel",
+    "psycopg2-binary",
+    "alembic",
+    "pgvector",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-sqlmodel = "*"
-psycopg2-binary = "*"
-alembic = "*"
-pgvector = "*"
+[tool.setuptools]
+packages = ["models", "repositories"]
+py-modules = ["database"]
+include-package-data = true
