@@ -2,6 +2,7 @@ import subprocess
 
 from langchain_core.tools import tool
 from .config import llm
+from .workspace_tools import workspace_tools
 
 try:
     from sandbox.executors.python_executor import PythonExecutor
@@ -69,5 +70,5 @@ def execute_python_file(filename: str):
         return f"failed to run : {str(e)}"
 
 
-tools = [write_python_file, execute_python_file]
+tools = [write_python_file, execute_python_file, *workspace_tools]
 llm_with_tools = llm.bind_tools(tools)

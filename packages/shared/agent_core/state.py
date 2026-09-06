@@ -1,6 +1,6 @@
 
 import ast
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -9,33 +9,54 @@ class RefactorState(TypedDict):
     original_code: str
     review_notes: str
     refactored_code: str
-    errors: str 
+    errors: str | None
     iterations: int
+    files: NotRequired[dict[str, str]]
+    candidate_files: NotRequired[dict[str, str]]
+    changed_files: NotRequired[list[str]]
+    validation_errors: NotRequired[dict[str, str]]
+    max_iterations: NotRequired[int]
 
 
-class BugfixState(TypedDict):
+class BugfixState(RefactorState):
     original_code: str
     error_message: str
-    review_notes: str
-    refactored_code: str
     fixed_code: str
-    errors: str
-    iterations: int
 
 
 def code_linter(state: RefactorState):
-    """checks the refractor code for  syntax errors."""
+    """Check the current candidate, supporting both legacy and file-map state."""
     print("LINTING CODE")
+    candidate_files = state.get("candidate_files")
+    if candidate_files is not None:
+        validation_errors: dict[str, str] = {}
+        for path, code in candidate_files.items():
+            try:
+                ast.parse(code, filename=path)
+            except SyntaxError as e:
+                validation_errors[path] = f"syntax error on line {e.lineno}: {e.msg}"
+
+        iterations = state.get("iterations", 0) + 1
+        return {
+            "errors": next(iter(validation_errors.values()), None),
+            "validation_errors": validation_errors,
+            "iterations": iterations,
+        }
+
     code = state["refactored_code"]
     iterations = state.get("iterations", 0)
 
     try:
         ast.parse(code)
-        return {"errors": None, "iterations": iterations + 1}
+        return {"errors": None, "validation_errors": {}, "iterations": iterations + 1}
     except SyntaxError as e:
         error_msg = f"syntax error on line {e.lineno}: {e.msg}"
         print(f" Found error :{error_msg}")
-        return {"errors": error_msg, "iterations": iterations + 1}
+        return {
+            "errors": error_msg,
+            "validation_errors": {"<refactored_code>": error_msg},
+            "iterations": iterations + 1,
+        }
 
 def code_review(state: RefactorState):
     """reviews the refactored code and provides feedback."""

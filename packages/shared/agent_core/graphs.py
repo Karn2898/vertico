@@ -11,8 +11,11 @@ from .state import (
 
 
 def decide_to_finish(state):
-    """Router to decide if we loop back or end."""
-    if state.get("errors") is None or state.get("iterations", 0) > 3:
+    """Stop when validation passes or the bounded retry budget is exhausted."""
+    validation_errors = state.get("validation_errors")
+    has_errors = bool(validation_errors) if validation_errors is not None else bool(state.get("errors"))
+    max_iterations = state.get("max_iterations", 3)
+    if not has_errors or state.get("iterations", 0) >= max_iterations:
         return "end"
     return "rewrite"
 
