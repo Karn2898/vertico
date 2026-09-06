@@ -16,6 +16,8 @@ class RefactorState(TypedDict):
     changed_files: NotRequired[list[str]]
     validation_errors: NotRequired[dict[str, str]]
     max_iterations: NotRequired[int]
+    patch_plan: NotRequired[dict[str, object]]
+    needs_more_context: NotRequired[bool]
 
 
 class BugfixState(RefactorState):
