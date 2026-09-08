@@ -38,14 +38,18 @@ def build_patch_plan(
             raise ValueError(f"file must be read before modifying it: {normalized_path}")
         if operation == "delete" and "reason" not in change:
             raise ValueError(f"delete operation requires a reason: {normalized_path}")
-        if operation in {"modify", "create"} and not isinstance(change.get("patch"), str):
-            raise ValueError(f"{operation} operation requires a patch string: {normalized_path}")
+        if operation in {"modify", "create"}:
+            if not isinstance(change.get("patch"), str):
+                raise ValueError(f"{operation} operation requires a patch string: {normalized_path}")
+            if "content" in change and not isinstance(change["content"], str):
+                raise ValueError(f"content must be a string: {normalized_path}")
 
         normalized_changes.append(
             {
                 "path": normalized_path,
                 "operation": operation,
                 "patch": change.get("patch", ""),
+                "content": change.get("content"),
                 "reason": change.get("reason", ""),
             }
         )
