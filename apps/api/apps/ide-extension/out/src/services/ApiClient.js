@@ -4,6 +4,7 @@ exports.ApiClient = void 0;
 class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
+        this.patchSessions = new Map();
         this.baseUrl = baseUrl.replace(/\/+$/, "");
         if (this.baseUrl.endsWith("/api")) {
             this.baseUrl = this.baseUrl.slice(0, -4);
@@ -50,14 +51,39 @@ class ApiClient {
             throw new Error(`indexRepo failed: ${res.statusText}`);
     }
     async acceptDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/accept`, { method: "POST" });
+        const patchId = await this.ensurePatchSession(sessionId);
+        const res = await fetch(`${this.baseUrl}/patches/${patchId}/approve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ approved: true }),
+        });
         if (!res.ok)
             throw new Error(`acceptDiff failed: ${res.statusText}`);
     }
     async rejectDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/reject`, { method: "POST" });
+        const patchId = await this.ensurePatchSession(sessionId);
+        const res = await fetch(`${this.baseUrl}/patches/${patchId}/reject`, { method: "POST" });
         if (!res.ok)
             throw new Error(`rejectDiff failed: ${res.statusText}`);
+    }
+    async preparePatch(sessionId, useGitStash = false) {
+        const res = await fetch(`${this.baseUrl}/patches/from-session/${sessionId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ use_git_stash: useGitStash }),
+        });
+        if (!res.ok)
+            throw new Error(`preparePatch failed: ${res.statusText}`);
+        const patch = (await res.json());
+        this.patchSessions.set(sessionId, patch.session_id);
+        return patch;
+    }
+    async ensurePatchSession(sessionId) {
+        const existing = this.patchSessions.get(sessionId);
+        if (existing)
+            return existing;
+        const patch = await this.preparePatch(sessionId);
+        return patch.session_id;
     }
     // Additional helpers used by other parts of the extension (lightweight stubs)
     async getSessionState(sessionId) {
@@ -67,7 +93,7 @@ class ApiClient {
         return await res.json();
     }
     async getDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/diff`);
+        const res = await fetch(`${this.baseUrl}/diffs/${sessionId}`);
         if (!res.ok)
             return { has_changes: false, diff: null };
         return await res.json();

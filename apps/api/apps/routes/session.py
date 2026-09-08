@@ -27,6 +27,7 @@ def create(req: CreateSessionRequest):
         llm_provider=req.llm_provider,
         llm_api_key=req.llm_api_key,
         llm_model=req.llm_model,
+        workspace_root=req.workspace_root,
     )
     return _to_response(session)
 

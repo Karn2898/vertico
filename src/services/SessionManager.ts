@@ -7,8 +7,8 @@ export class SessionManager {
 
   constructor(private api: ApiClient) {}
 
-  async createSession(filename: string, code: string): Promise<Session> {
-    const session = await this.api.createSession(filename, code);
+  async createSession(filename: string, code: string, workspaceRoot?: string): Promise<Session> {
+    const session = await this.api.createSession(filename, code, workspaceRoot);
     this.sessions.set(session.session_id, session);
     this.currentSessionId = session.session_id;
     return session;

@@ -42,7 +42,8 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." },
       async () => {
-        const session = await sessionManager.createSession(filename, code);
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const session = await sessionManager.createSession(filename, code, workspaceRoot);
         chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "refactor");
       }
@@ -56,7 +57,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (!editor) return;
     const code = editor.document.getText();
     const filename = editor.document.fileName;
-    const session = await sessionManager.createSession(filename, code);
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const session = await sessionManager.createSession(filename, code, workspaceRoot);
     chatPanel.reveal();
     await sessionManager.runGraph(session.session_id, "review");
   });
@@ -68,7 +70,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (!errorMsg) return;
     const code = editor.document.getText();
     const filename = editor.document.fileName;
-    const session = await sessionManager.createSession(filename, code);
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const session = await sessionManager.createSession(filename, code, workspaceRoot);
     chatPanel.reveal();
     await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
   });

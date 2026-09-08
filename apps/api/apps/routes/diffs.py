@@ -43,7 +43,7 @@ def get_diff(session_id : str):
     This is what the IDE extension renders in the diff viewer.
     """
     _require(session_id)
-    session=sessons[session_id]
+    session=sessions[session_id]
     state=session["agent_state"]
 
     original=state.get("original_code","")

@@ -25,7 +25,17 @@ export interface DiffResult {
   status: string;
 }
 
+export interface PatchSession {
+  session_id: string;
+  status: string;
+  files: string[];
+  changes: Array<{ path: string; operation: string; content?: string }>;
+  git_head?: string | null;
+}
+
 export class ApiClient {
+  private patchSessions = new Map<string, string>();
+
   constructor(public baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     if (this.baseUrl.endsWith("/api")) {
@@ -38,11 +48,11 @@ export class ApiClient {
     if (!res.ok) throw new Error(`health check failed: ${res.statusText}`);
   }
 
-  async createSession(filename: string, code: string): Promise<Session> {
+  async createSession(filename: string, code: string, workspaceRoot?: string): Promise<Session> {
     const res = await fetch(`${this.baseUrl}/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename, code }),
+      body: JSON.stringify({ filename, code, workspace_root: workspaceRoot }),
     });
     if (!res.ok) throw new Error(`createSession failed: ${res.statusText}`);
     return (await res.json()) as Session;
@@ -78,13 +88,38 @@ export class ApiClient {
   }
 
   async acceptDiff(sessionId: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/accept`, { method: "POST" });
+    const patchId = await this.ensurePatchSession(sessionId);
+    const res = await fetch(`${this.baseUrl}/patches/${patchId}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approved: true }),
+    });
     if (!res.ok) throw new Error(`acceptDiff failed: ${res.statusText}`);
   }
 
   async rejectDiff(sessionId: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/reject`, { method: "POST" });
+    const patchId = await this.ensurePatchSession(sessionId);
+    const res = await fetch(`${this.baseUrl}/patches/${patchId}/reject`, { method: "POST" });
     if (!res.ok) throw new Error(`rejectDiff failed: ${res.statusText}`);
+  }
+
+  async preparePatch(sessionId: string, useGitStash = false): Promise<PatchSession> {
+    const res = await fetch(`${this.baseUrl}/patches/from-session/${sessionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ use_git_stash: useGitStash }),
+    });
+    if (!res.ok) throw new Error(`preparePatch failed: ${res.statusText}`);
+    const patch = (await res.json()) as PatchSession;
+    this.patchSessions.set(sessionId, patch.session_id);
+    return patch;
+  }
+
+  private async ensurePatchSession(sessionId: string): Promise<string> {
+    const existing = this.patchSessions.get(sessionId);
+    if (existing) return existing;
+    const patch = await this.preparePatch(sessionId);
+    return patch.session_id;
   }
 
   // Additional helpers used by other parts of the extension (lightweight stubs)
@@ -95,7 +130,7 @@ export class ApiClient {
   }
 
   async getDiff(sessionId: string): Promise<DiffResult | any> {
-    const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/diff`);
+    const res = await fetch(`${this.baseUrl}/diffs/${sessionId}`);
     if (!res.ok) return { has_changes: false, diff: null } as any;
     return await res.json();
   }

@@ -1,8 +1,14 @@
 import json
+from pathlib import Path
 
 import pytest
 
-from agent_core.workspace_tools import read_code_file, search_code
+from agent_core.workspace_tools import (
+    read_code_file,
+    reset_active_repo_root,
+    search_code,
+    set_active_repo_root,
+)
 
 
 def test_search_code_returns_bounded_structured_matches():
@@ -42,3 +48,17 @@ def test_read_code_file_returns_requested_range():
 def test_workspace_tools_reject_secret_or_escape_paths(path):
     with pytest.raises(ValueError):
         read_code_file.invoke({"path": path})
+
+
+def test_workspace_tools_use_active_development_host_root(tmp_path: Path):
+    target = tmp_path / "remote_module.py"
+    target.write_text("class RemoteModule:\n    pass\n", encoding="utf-8")
+    token = set_active_repo_root(tmp_path)
+    try:
+        matches = json.loads(search_code.invoke({"query": "RemoteModule"}))
+        result = json.loads(read_code_file.invoke({"path": "remote_module.py"}))
+    finally:
+        reset_active_repo_root(token)
+
+    assert matches[0]["path"] == "remote_module.py"
+    assert "class RemoteModule" in result["content"]

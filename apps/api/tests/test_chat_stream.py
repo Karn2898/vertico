@@ -4,16 +4,18 @@ from apps.api.apps.routes import chat
 
 
 def test_stream_chat_uses_session_llm(monkeypatch):
-    class FakeChunk:
+    class FakeResponse:
         content = "hello"
+        tool_calls = []
 
     class FakeLLM:
         def __init__(self):
             self.calls = []
 
-        async def astream(self, messages):
+
+        async def ainvoke(self, messages):
             self.calls.append(messages)
-            yield FakeChunk()
+            return FakeResponse()
 
     fake_llm = FakeLLM()
     monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
@@ -36,5 +38,48 @@ def test_stream_chat_uses_session_llm(monkeypatch):
             chunks.append(chunk)
         assert any("hello" in chunk for chunk in chunks)
         assert fake_llm.calls
+
+    asyncio.run(run())
+
+
+def test_stream_chat_executes_requested_workspace_tool(monkeypatch):
+    class FakeResponse:
+        def __init__(self, content="", tool_calls=None):
+            self.content = content
+            self.tool_calls = tool_calls or []
+
+    class FakeLLM:
+        def __init__(self):
+            self.calls = 0
+
+        async def ainvoke(self, messages):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse(
+                    tool_calls=[
+                        {
+                            "id": "call-1",
+                            "name": "read_code_file",
+                            "args": {
+                                "path": "packages/shared/agent_core/state.py",
+                                "start_line": 1,
+                                "end_line": 1,
+                            },
+                        }
+                    ]
+                )
+            return FakeResponse("I read the file.")
+
+    fake_llm = FakeLLM()
+    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    chat.sessions["tool-sess"] = {
+        "agent_state": {"iterations": 0, "errors": None, "review_notes": ""}
+    }
+    chat.chat_histories["tool-sess"] = []
+
+    async def run():
+        chunks = [chunk async for chunk in chat._stream_chat("tool-sess", "read the file")]
+        assert any("I read the file." in chunk for chunk in chunks)
+        assert fake_llm.calls == 2
 
     asyncio.run(run())

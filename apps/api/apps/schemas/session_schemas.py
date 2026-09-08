@@ -5,6 +5,7 @@ from typing import Optional
 class CreateSessionRequest(BaseModel):
     filename: str
     code: str
+    workspace_root: Optional[str] = None
     llm_provider: str = "nvidia"
     llm_api_key: Optional[str] = None
     llm_model: Optional[str] = None

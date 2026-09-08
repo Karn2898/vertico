@@ -156,6 +156,17 @@ async def _stream_chat(session_id: str, user_message: str):
    session = sessions[session_id]
    agent_state = session["agent_state"]
    llm = _get_llm(session)
+   from agent_core.workspace_tools import (
+      reset_active_repo_root,
+      set_active_repo_root,
+      workspace_tools,
+   )
+   from agent_core.planning import plan_file_changes
+   from agent_core.patching import prepare_patch_session
+   tool_map = {
+      tool.name: tool
+      for tool in [*workspace_tools, plan_file_changes, prepare_patch_session]
+   }
 
    system_prompt = f"""You are a coding assistant helping a developer refactor Python code.
 Current session context:
@@ -175,12 +186,47 @@ Answer questions about the code, the refactoring process, or errors concisely.
    ]
 
    full_response = ""
+   pending_messages = messages
 
-   # stream token by token
-   async for chunk in llm.astream(messages):
-      token = getattr(chunk, "content", str(chunk))
-      full_response += token
-      yield f"data: {json.dumps({'content': token})}\n\n"
+   for _ in range(4):
+      response = await llm.ainvoke(pending_messages)
+      tool_calls = getattr(response, "tool_calls", []) or []
+      if not tool_calls:
+         token = getattr(response, "content", str(response))
+         if isinstance(token, list):
+            token = "".join(
+               item.get("text", "") if isinstance(item, dict) else str(item)
+               for item in token
+            )
+         full_response += token
+         yield f"data: {json.dumps({'content': token})}\n\n"
+         break
+
+      pending_messages = [*pending_messages, response]
+      for call in tool_calls:
+         tool = tool_map.get(call["name"])
+         if tool is None:
+            result = f"Unknown tool: {call['name']}"
+         else:
+            try:
+               root_token = None
+               workspace_root = session.get("workspace_root")
+               if workspace_root:
+                  root_token = set_active_repo_root(workspace_root)
+               result = await tool.ainvoke(call.get("args", {}))
+               if root_token is not None:
+                  reset_active_repo_root(root_token)
+            except Exception as exc:
+               if root_token is not None:
+                  reset_active_repo_root(root_token)
+               result = f"Tool error: {exc}"
+         pending_messages.append(
+            {
+               "role": "tool",
+               "tool_call_id": call["id"],
+               "content": str(result),
+            }
+         )
 
    _append_message(session_id, role="assistant", content=full_response)
    yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"

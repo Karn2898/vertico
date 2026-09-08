@@ -28,12 +28,14 @@ def create_session(
     llm_provider: str = "nvidia",
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
+    workspace_root: Optional[str] = None,
 ) -> dict:
     session_id = str(uuid.uuid4())
 
     sessions[session_id] = {
         "session_id": session_id,
         "filename": filename,
+        "workspace_root": workspace_root,
         "graph": graph,
         "status": "idle",
         "created_at": datetime.utcnow().isoformat(),
