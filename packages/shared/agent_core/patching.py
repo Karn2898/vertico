@@ -112,6 +112,17 @@ def reject_patch_session(session_id: str) -> dict[str, Any]:
     return {"session_id": session_id, "status": "rejected", "files": list(session["checkpoint"]["files"])}
 
 
+def get_patch_session(session_id: str) -> dict[str, Any]:
+    """Return the approval status and proposed changes for a patch session."""
+    session = _get_session(session_id)
+    return {
+        "session_id": session_id,
+        "status": session["status"],
+        "changes": session["plan"]["changes"],
+        "files": list(session["checkpoint"]["files"]),
+    }
+
+
 def _get_session(session_id: str) -> dict[str, Any]:
     try:
         return _PATCH_SESSIONS[session_id]
