@@ -18,6 +18,8 @@ class RefactorState(TypedDict):
     max_iterations: NotRequired[int]
     patch_plan: NotRequired[dict[str, object]]
     needs_more_context: NotRequired[bool]
+    patch_session_id: NotRequired[str]
+    approval_status: NotRequired[str]
 
 
 class BugfixState(RefactorState):
