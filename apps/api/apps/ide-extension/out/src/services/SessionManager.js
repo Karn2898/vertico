@@ -7,8 +7,8 @@ class SessionManager {
         this.sessions = new Map();
         this.currentSessionId = null;
     }
-    async createSession(filename, code) {
-        const session = await this.api.createSession(filename, code);
+    async createSession(filename, code, workspaceRoot) {
+        const session = await this.api.createSession(filename, code, workspaceRoot);
         this.sessions.set(session.session_id, session);
         this.currentSessionId = session.session_id;
         return session;

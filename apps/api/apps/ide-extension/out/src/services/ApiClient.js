@@ -15,11 +15,11 @@ class ApiClient {
         if (!res.ok)
             throw new Error(`health check failed: ${res.statusText}`);
     }
-    async createSession(filename, code) {
+    async createSession(filename, code, workspaceRoot) {
         const res = await fetch(`${this.baseUrl}/sessions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename, code }),
+            body: JSON.stringify({ filename, code, workspace_root: workspaceRoot }),
         });
         if (!res.ok)
             throw new Error(`createSession failed: ${res.statusText}`);
