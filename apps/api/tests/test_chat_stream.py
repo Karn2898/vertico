@@ -83,3 +83,54 @@ def test_stream_chat_executes_requested_workspace_tool(monkeypatch):
         assert fake_llm.calls == 2
 
     asyncio.run(run())
+
+
+def test_stream_chat_uses_alternate_workspace_root(tmp_path, monkeypatch):
+    external_file = tmp_path / "main.py"
+    external_file.write_text("print('hello from remote workspace')\n", encoding="utf-8")
+
+    class FakeResponse:
+        def __init__(self, content="", tool_calls=None):
+            self.content = content
+            self.tool_calls = tool_calls or []
+
+    class FakeLLM:
+        def __init__(self):
+            self.calls = 0
+
+        async def ainvoke(self, messages):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse(
+                    tool_calls=[
+                        {
+                            "id": "call-1",
+                            "name": "read_code_file",
+                            "args": {
+                                "path": "main.py",
+                                "start_line": 1,
+                                "end_line": 10,
+                            },
+                        }
+                    ]
+                )
+            return FakeResponse("Read external file successfully.")
+
+    fake_llm = FakeLLM()
+    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    chat.sessions["ext-sess"] = {
+        "workspace_root": str(tmp_path),
+        "agent_state": {"iterations": 0, "errors": None, "review_notes": ""},
+    }
+    chat.chat_histories["ext-sess"] = []
+
+    async def run():
+        chunks = [
+            chunk
+            async for chunk in chat._stream_chat("ext-sess", "read proxy server main.py")
+        ]
+        assert any("Read external file successfully." in chunk for chunk in chunks)
+        assert fake_llm.calls == 2
+
+    asyncio.run(run())
+
