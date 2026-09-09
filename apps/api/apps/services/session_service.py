@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 import uuid
 from fastapi import Depends
@@ -38,7 +38,7 @@ def create_session(
         "workspace_root": workspace_root,
         "graph": graph,
         "status": "idle",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "llm_provider": llm_provider,
         "llm_api_key": llm_api_key,
         "llm_model": llm_model,
