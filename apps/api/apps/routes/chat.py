@@ -1,23 +1,28 @@
+import sys
+from pathlib import Path
+
+# Ensure packages/shared is on sys.path for agent_core imports
+_repo_root = Path(__file__).resolve().parents[4]
+_shared_path = _repo_root / "packages" / "shared"
+if str(_shared_path) not in sys.path:
+    sys.path.insert(0, str(_shared_path))
+
+from datetime import datetime, timezone
+import json
+import importlib
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
-import json
 
 from ..services.session_service import sessions, _require
-import importlib
-import sys
-from pathlib import Path
 
 graphs = None
 try:
     graphs = importlib.import_module("agent_core.graphs")
 except Exception:
-   repo_root = Path(__file__).resolve().parents[4]
-   shared_path = repo_root / "packages" / "shared"
-   sys.path.insert(0, str(shared_path))
-   graphs = importlib.import_module("agent_core.graphs")
+    pass
 
 
 def _get_llm(session: dict):
@@ -27,27 +32,27 @@ def _get_llm(session: dict):
     config = importlib.import_module("agent_core.config")
     return config.get_llm(provider=provider, api_key=api_key, model=model)
 
-router=APIRouter(prefix="/chat",tags=["chat"])
+router = APIRouter(prefix="/chat", tags=["chat"])
 
 class ChatMessage(BaseModel):
-   role: str
-   content: str
-   timestamp: str
-   node: Optional[str]=None
+    role: str
+    content: str
+    timestamp: str
+    node: Optional[str] = None
 
 class SendMessageRequest(BaseModel):
-   session_id: str
-   message: str
+    session_id: str
+    message: str
 
 class ChatHistoryResponse(BaseModel):
-   session_id: str
-   messages : list[ChatMessage]
+    session_id: str
+    messages: list[ChatMessage]
 
 
-chat_histories: dict[str , list[dict]]={}
+chat_histories: dict[str, list[dict]] = {}
 
-TASK_KEYWORDS=[
-   "refactor", "fix", "rewrite", "improve",
+TASK_KEYWORDS = [
+    "refactor", "fix", "rewrite", "improve",
     "clean", "optimize", "review", "lint", "run"
 ]
 
@@ -57,41 +62,42 @@ def _is_task(message: str):
 
     Simple keyword check for now — swap with LLM classifier later.
     """
-    lowered= message.lower()
+    lowered = message.lower()
     return any(keyword in lowered for keyword in TASK_KEYWORDS)
 
 
 @router.post("/message")
 async def send_message(req: SendMessageRequest):
-   """Receive a message and stream either agent execution or chat reply.
+    """Receive a message and stream either agent execution or chat reply.
 
-   If the message is a task, run the agent graph; otherwise stream LLM chat.
-   """
+    If the message is a task, run the agent graph; otherwise stream LLM chat.
+    """
 
-   _require(req.session_id)
-   _ensure_history(req.session_id)
+    _require(req.session_id)
+    _ensure_history(req.session_id)
 
-   # save user message
-   _append_message(req.session_id, role="user", content=req.message)
+    # save user message
+    _append_message(req.session_id, role="user", content=req.message)
 
-   if _is_task(req.message):
-      return StreamingResponse(
-         _stream_agent(req.session_id, req.message),
-         media_type="text/event-stream",
-      )
+    if _is_task(req.message):
+        return StreamingResponse(
+            _stream_agent(req.session_id, req.message),
+            media_type="text/event-stream",
+        )
 
-   return StreamingResponse(
-      _stream_chat(req.session_id, req.message), media_type="text/event-stream"
-   )
-@router.get("/{session_id}/history",response_model=ChatHistoryResponse)
+    return StreamingResponse(
+        _stream_chat(req.session_id, req.message), media_type="text/event-stream"
+    )
+
+@router.get("/{session_id}/history", response_model=ChatHistoryResponse)
 def get_history(session_id: str):
-   _require(session_id)
-   _ensure_history(session_id)
+    _require(session_id)
+    _ensure_history(session_id)
 
-   return ChatHistoryResponse(
-      session_id=session_id,
-      messages=chat_histories[session_id]
-   )
+    return ChatHistoryResponse(
+        session_id=session_id,
+        messages=[ChatMessage(**m) for m in chat_histories[session_id]],
+    )
 
 @router.post("/{session_id}/clear")
 def clear_history(session_id: str):
@@ -113,6 +119,11 @@ async def _stream_agent(session_id: str, user_message: str):
 
    session = sessions[session_id]
    sessions[session_id]["status"] = "running"
+
+   if graphs is None or not hasattr(graphs, "workflow"):
+      sessions[session_id]["status"] = "failed"
+      yield f"data: {json.dumps({'node': 'error', 'content': 'Agent workflow module is not available.'})}\n\n"
+      return
 
    app = graphs.workflow.compile()
    agent_state = session["agent_state"]
@@ -163,12 +174,15 @@ async def _stream_chat(session_id: str, user_message: str):
    )
    from agent_core.planning import plan_file_changes
    from agent_core.patching import prepare_patch_session
-   tool_map = {
-      tool.name: tool
-      for tool in [*workspace_tools, plan_file_changes, prepare_patch_session]
-   }
+   tools = [*workspace_tools, plan_file_changes, prepare_patch_session]
+   tool_map = {tool.name: tool for tool in tools}
+   if hasattr(llm, "bind_tools"):
+      llm = llm.bind_tools(tools)
 
-   system_prompt = f"""You are a coding assistant helping a developer refactor Python code.
+   system_prompt = f"""You are Vertico, an AI coding assistant.
+You have tools available to search and read files in the workspace (`search_code`, `read_code_file`, `plan_file_changes`, `prepare_patch_session`).
+When asked to study, explore, analyze, or search the workspace or codebase, call the available tools (`search_code`, `read_code_file`) to inspect files. Never claim you lack access to the file system or workspace.
+
 Current session context:
 - Iterations completed: {agent_state.get('iterations')}
 - Last errors: {agent_state.get('errors') or 'None'}
@@ -246,7 +260,7 @@ def _append_message(
       {
          "role": role,
          "content": content,
-         "timestamp": datetime.utcnow().isoformat(),
+         "timestamp": datetime.now(timezone.utc).isoformat(),
          "node": node,
       }
    )
