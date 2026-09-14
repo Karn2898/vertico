@@ -1,11 +1,12 @@
 import os
+import sys
 import subprocess
 import logging
 import docker
 from docker.errors import ContainerError, ImageNotFound
 
 from .base import BaseExecutor, ExecutionResult
-from ..policies.limits import RESOURCE_LIMITS, TIMEOUTS, MAX_OUTPUT_BYTES
+from ..policies.limit import RESOURCE_LIMITS, TIMEOUTS, MAX_OUTPUT_BYTES
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ class PythonExecutor(BaseExecutor):
         logger.warning("Running code WITHOUT sandbox — dev mode only")
         try:
             result = subprocess.run(
-                ["python3", "-c", code],
+                [sys.executable, "-c", code],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
