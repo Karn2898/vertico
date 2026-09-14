@@ -7,7 +7,13 @@ try:
     from ..embedder.RAG_embedders import embed_query
 except Exception:
     embed_query = None
-from ..rerankers.reranker import rerank
+try:
+    from ..rerankers.reranker import rerank
+except Exception:
+    try:
+        from rerankers.reranker import rerank
+    except Exception:
+        rerank = None
 
 def retrieve(
     query: str,
