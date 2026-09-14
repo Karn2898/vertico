@@ -17,10 +17,10 @@ for _path in (
     if _path not in sys.path:
         sys.path.insert(0, _path)
 
-from .celery_app import app
-from .task_handlers.refractor import handle_refactor
-from .task_handlers.bugfix import handle_bugfix
-from .task_handlers.review import handle_review
+from celery_app import app
+from task_handlers.refractor import handle_refactor
+from task_handlers.bugfix import handle_bugfix
+from task_handlers.review import handle_review
 from db.repositories.session_repo import SessionRepo
 from db.database import engine
 from sqlmodel import Session
