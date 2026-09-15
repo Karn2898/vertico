@@ -39,10 +39,12 @@ def build_patch_plan(
         if operation == "delete" and "reason" not in change:
             raise ValueError(f"delete operation requires a reason: {normalized_path}")
         if operation in {"modify", "create"}:
-            if not isinstance(change.get("patch"), str):
-                raise ValueError(f"{operation} operation requires a patch string: {normalized_path}")
-            if "content" in change and not isinstance(change["content"], str):
-                raise ValueError(f"content must be a string: {normalized_path}")
+            has_patch = isinstance(change.get("patch"), str) and change["patch"]
+            has_content = isinstance(change.get("content"), str)
+            if not has_patch and not has_content:
+                raise ValueError(
+                    f"{operation} operation requires a patch or content string: {normalized_path}"
+                )
 
         normalized_changes.append(
             {
@@ -61,18 +63,43 @@ def build_patch_plan(
     }
 
 
+_OPERATION_ALIASES = {
+    "create_file": "create",
+    "create_file": "create",
+    "add_file": "create",
+    "new_file": "create",
+    "write": "modify",
+    "update": "modify",
+    "edit": "modify",
+    "modify_file": "modify",
+    "remove": "delete",
+    "delete_file": "delete",
+}
+
+
 @tool
 def plan_file_changes(
     changes_json: str,
     context_paths_json: str = "[]",
     needs_more_context: bool = False,
 ) -> str:
-    """Validate a JSON list of proposed repository changes without applying them."""
+    """Validate a JSON list of proposed repository changes without applying them.
+
+    Each change must have:
+    - path: repository-relative file path
+    - operation: one of create, modify, delete (or aliases like create_file, write, update, remove)
+    - patch: unified diff-style patch string (required for create/modify)
+    - content: full file content (alternative to patch for create/modify)
+    - reason: explanation (required for delete)
+    """
     try:
         changes = json.loads(changes_json)
         context_paths_value = json.loads(context_paths_json)
     except (TypeError, json.JSONDecodeError) as exc:
-        raise ValueError("changes_json and context_paths_json must be valid JSON") from exc
+        raise ValueError(
+            "changes_json and context_paths_json must be valid JSON strings. "
+            "Use json.dumps() to convert dicts to strings."
+        ) from exc
     if not isinstance(changes, list) or not all(isinstance(item, dict) for item in changes):
         raise ValueError("changes_json must contain a JSON list of objects")
     if not isinstance(context_paths_value, list) or not all(
@@ -80,4 +107,18 @@ def plan_file_changes(
     ):
         raise ValueError("context_paths_json must contain a JSON list of paths")
     context_paths = set(context_paths_value)
-    return json.dumps(build_patch_plan(changes, context_paths, needs_more_context))
+
+    normalized_changes = []
+    for change in changes:
+        operation = change.get("operation", "")
+        original_operation = operation
+        operation = _OPERATION_ALIASES.get(operation, operation)
+        if operation not in _ALLOWED_OPERATIONS:
+            raise ValueError(
+                f"unsupported operation: {original_operation!r}. "
+                f"Expected one of {_ALLOWED_OPERATIONS} or aliases: {list(_OPERATION_ALIASES.keys())}"
+            )
+        change["operation"] = operation
+        normalized_changes.append(change)
+
+    return json.dumps(build_patch_plan(normalized_changes, context_paths, needs_more_context))
