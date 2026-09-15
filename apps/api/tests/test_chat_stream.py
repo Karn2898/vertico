@@ -1,6 +1,6 @@
 import asyncio
 
-from apps.api.apps.routes import chat
+from apps.routes import chat
 
 
 def test_stream_chat_uses_session_llm(monkeypatch):

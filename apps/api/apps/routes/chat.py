@@ -119,6 +119,28 @@ def clear_history(session_id: str):
     return {"cleared":session_id}
 
 # streaming generators
+def _process_node(session_id: str, node_name: str, node_output: dict):
+    sessions[session_id]["agent_state"].update(node_output)
+    content = _node_output_to_message(node_name, node_output)
+
+    _append_message(
+        session_id,
+        role="assistant",
+        content=content,
+        node=node_name,
+    )
+
+    event = {
+        "node": node_name,
+        "content": content,
+        "state": {
+            "iterations": node_output.get("iterations", 0),
+            "errors": node_output.get("errors"),
+        },
+    }
+    yield f"data: {json.dumps(event)}\n\n"
+
+
 async def _stream_agent(session_id: str, user_message: str):
     """Compile and stream the refactor graph.
 
@@ -137,26 +159,18 @@ async def _stream_agent(session_id: str, user_message: str):
     agent_state = session["agent_state"]
 
     try:
-        for node_name, node_output in app.stream(agent_state):
-            sessions[session_id]["agent_state"].update(node_output)
-            content = _node_output_to_message(node_name, node_output)
-
-            _append_message(
-                session_id,
-                role="assistant",
-                content=content,
-                node=node_name,
-            )
-
-            event = {
-                "node": node_name,
-                "content": content,
-                "state": {
-                    "iterations": node_output.get("iterations", 0),
-                    "errors": node_output.get("errors"),
-                },
-            }
-            yield f"data: {json.dumps(event)}\n\n"
+        stream = app.stream(agent_state)
+        if isinstance(stream, dict):
+            stream = [stream]
+        for item in stream:
+            if isinstance(item, dict):
+                for node_name, node_output in item.items():
+                    for event in _process_node(session_id, node_name, node_output):
+                        yield event
+            else:
+                node_name, node_output = item
+                for event in _process_node(session_id, node_name, node_output):
+                    yield event
 
         sessions[session_id]["status"] = "done"
         yield f"data: {json.dumps({'node': 'done', 'content': 'Refactor complete.'})}\n\n"

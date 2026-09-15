@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from apps.api.apps.routes.patches import (
+from apps.routes.patches import (
     ApprovalRequest,
     PreparePatchRequest,
     PatchChange,
