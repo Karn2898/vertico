@@ -8,6 +8,14 @@ import { ApiClient } from "../../../../src/services/ApiClient";
 
 let sessionManager: SessionManager;
 
+function getWorkspaceRoot(): string | undefined {
+  const activeUri = vscode.window.activeTextEditor?.document.uri;
+  if (activeUri) {
+    return vscode.workspace.getWorkspaceFolder(activeUri)?.uri.fsPath;
+  }
+  return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
 export function activate(context: vscode.ExtensionContext) {
   const apiUrl = vscode.workspace
     .getConfiguration("Vertico")
@@ -42,7 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." },
       async () => {
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const workspaceRoot = getWorkspaceRoot();
         const session = await sessionManager.createSession(filename, code, workspaceRoot);
         chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "refactor");
@@ -57,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (!editor) return;
     const code = editor.document.getText();
     const filename = editor.document.fileName;
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot = getWorkspaceRoot();
     const session = await sessionManager.createSession(filename, code, workspaceRoot);
     chatPanel.reveal();
     await sessionManager.runGraph(session.session_id, "review");
@@ -70,14 +78,14 @@ export function activate(context: vscode.ExtensionContext) {
     if (!errorMsg) return;
     const code = editor.document.getText();
     const filename = editor.document.fileName;
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot = getWorkspaceRoot();
     const session = await sessionManager.createSession(filename, code, workspaceRoot);
     chatPanel.reveal();
     await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
   });
 
   vscode.commands.registerCommand("vertico.indexRepo", async () => {
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot = getWorkspaceRoot();
     if (!workspaceRoot) {
       vscode.window.showErrorMessage("No workspace open");
       return;

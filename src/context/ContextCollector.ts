@@ -19,7 +19,10 @@ export class ContextCollector {
 
     const doc = editor.document;
     const selection = editor.selection;
-    const repoRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath ?? "";
+    const activeUri = doc.uri;
+    const repoRoot = activeUri
+      ? vscode.workspace.getWorkspaceFolder(activeUri)?.uri.fsPath ?? ""
+      : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "";
 
     const fileTree = vscode.workspace.textDocuments
       .filter((d) => !d.isUntitled && d.uri.scheme === "file")
