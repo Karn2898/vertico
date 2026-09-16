@@ -1,5 +1,20 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "fs";
+
+export function findGitRoot(startPath: string): string | undefined {
+  let current = startPath;
+  while (true) {
+    if (fs.existsSync(path.join(current, ".git"))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return undefined;
+    }
+    current = parent;
+  }
+}
 
 export interface EditorContext {
   filename: string;
@@ -20,9 +35,11 @@ export class ContextCollector {
     const doc = editor.document;
     const selection = editor.selection;
     const activeUri = doc.uri;
-    const repoRoot = activeUri
-      ? vscode.workspace.getWorkspaceFolder(activeUri)?.uri.fsPath ?? ""
-      : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "";
+    const fileDir = activeUri ? path.dirname(activeUri.fsPath) : "";
+    const repoRoot = findGitRoot(fileDir)
+      ?? (activeUri
+        ? vscode.workspace.getWorkspaceFolder(activeUri)?.uri.fsPath ?? ""
+        : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "");
 
     const fileTree = vscode.workspace.textDocuments
       .filter((d) => !d.isUntitled && d.uri.scheme === "file")

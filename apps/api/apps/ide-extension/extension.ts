@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
 import { ChatPanel } from "../../../../src/chat/ChatPanel";
 import { SessionManager } from "../../../../src/services/SessionManager";
-import { ContextCollector } from "../../../../src/context/ContextCollector";
+import { ContextCollector, findGitRoot } from "../../../../src/context/ContextCollector";
 import { InlineProvider } from "../../../../src/context/InlineProvider";
 import { DiffViewer } from "../../../../src/diff/DiffViewer";
 import { ApiClient } from "../../../../src/services/ApiClient";
@@ -9,9 +11,10 @@ import { ApiClient } from "../../../../src/services/ApiClient";
 let sessionManager: SessionManager;
 
 function getWorkspaceRoot(): string | undefined {
-  const activeUri = vscode.window.activeTextEditor?.document.uri;
-  if (activeUri) {
-    return vscode.workspace.getWorkspaceFolder(activeUri)?.uri.fsPath;
+  const editor = vscode.window.activeTextEditor;
+  if (editor) {
+    const fileDir = path.dirname(editor.document.uri.fsPath);
+    return findGitRoot(fileDir);
   }
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 }
