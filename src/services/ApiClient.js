@@ -8,17 +8,18 @@ class ApiClient {
         if (this.baseUrl.endsWith("/api")) {
             this.baseUrl = this.baseUrl.slice(0, -4);
         }
+        this.patchSessions = new Map();
     }
     async checkHealth() {
         const res = await fetch(`${this.baseUrl}/health`);
         if (!res.ok)
             throw new Error(`health check failed: ${res.statusText}`);
     }
-    async createSession(filename, code) {
+    async createSession(filename, code, workspaceRoot) {
         const res = await fetch(`${this.baseUrl}/sessions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename, code }),
+            body: JSON.stringify({ filename, code, workspace_root: workspaceRoot }),
         });
         if (!res.ok)
             throw new Error(`createSession failed: ${res.statusText}`);
@@ -50,38 +51,90 @@ class ApiClient {
             throw new Error(`indexRepo failed: ${res.statusText}`);
     }
     async acceptDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/accept`, { method: "POST" });
+        const patchId = await this.ensurePatchSession(sessionId);
+        const res = await fetch(`${this.baseUrl}/patches/${patchId}/approve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ approved: true }),
+        });
         if (!res.ok)
             throw new Error(`acceptDiff failed: ${res.statusText}`);
     }
     async rejectDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/reject`, { method: "POST" });
+        const patchId = await this.ensurePatchSession(sessionId);
+        const res = await fetch(`${this.baseUrl}/patches/${patchId}/reject`, { method: "POST" });
         if (!res.ok)
             throw new Error(`rejectDiff failed: ${res.statusText}`);
     }
-    // Additional helpers used by other parts of the extension (lightweight stubs)
+    async preparePatch(sessionId, useGitStash = false) {
+        const res = await fetch(`${this.baseUrl}/patches/from-session/${sessionId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ use_git_stash: useGitStash }),
+        });
+        if (!res.ok)
+            throw new Error(`preparePatch failed: ${res.statusText}`);
+        const patch = (await res.json());
+        this.patchSessions.set(sessionId, patch.session_id);
+        return patch;
+    }
+    async ensurePatchSession(sessionId) {
+        const existing = this.patchSessions.get(sessionId);
+        if (existing) return existing;
+        const patch = await this.preparePatch(sessionId);
+        return patch.session_id;
+    }
     async getSessionState(sessionId) {
         const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/state`);
-        if (!res.ok)
-            return {};
+        if (!res.ok) return {} as any;
         return await res.json();
     }
     async getDiff(sessionId) {
-        const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/diff`);
-        if (!res.ok)
-            return { has_changes: false, diff: null };
+        const res = await fetch(`${this.baseUrl}/diffs/${sessionId}`);
+        if (!res.ok) return { has_changes: false, diff: null } as any;
         return await res.json();
     }
-    streamChat(sessionId, text) {
-        // In a real environment this would open an EventSource or websocket.
-        // Return a minimal EventSource-like object for runtime usage in the extension.
-        const es = {
-            onmessage: null,
-            onerror: null,
-            close() { },
-        };
-        // Attempt a simple fetch-stream or server-sent events in production.
-        return es;
+    streamChat(sessionId, text, handlers) {
+        const controller = new AbortController();
+        (async () => {
+            try {
+                const res = await fetch(`${this.baseUrl}/chat/message`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId, message: text }),
+                    signal: controller.signal,
+                });
+                if (!res.ok) {
+                    handlers.onError?.();
+                    return;
+                }
+                const reader = res.body!.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split("\n\n");
+                    buffer = events.pop() ?? "";
+                    for (const evt of events) {
+                        const line = evt.trim();
+                        if (!line.startsWith("data:")) continue;
+                        const payload = line.slice(5).trim();
+                        if (!payload) continue;
+                        try {
+                            handlers.onMessage(JSON.parse(payload));
+                        } catch {
+                            /* ignore malformed */
+                        }
+                    }
+                }
+                handlers.onDone?.();
+            } catch {
+                handlers.onError?.();
+            }
+        })();
+        return () => controller.abort();
     }
 }
 exports.ApiClient = ApiClient;
