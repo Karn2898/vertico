@@ -53,3 +53,38 @@ input {
   color: var(--fg); padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none;
 }
 input:focus { box-shadow: 0 0 0 1px var(--primary); }
+
+.markdown h1 { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem; color: var(--fg); }
+.markdown h2 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 0.75rem; color: var(--fg); }
+.markdown h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; margin-top: 0.5rem; color: var(--fg); }
+.markdown p { margin-bottom: 0.5rem; }
+.markdown ul { margin-bottom: 0.5rem; padding-left: 1rem; }
+.markdown ol { margin-bottom: 0.5rem; padding-left: 1rem; }
+.markdown li { color: var(--fg); margin-bottom: 0.125rem; }
+.markdown strong { font-weight: 600; color: var(--fg); }
+.markdown em { font-style: italic; color: var(--muted); }
+.markdown a { color: var(--primary); text-decoration: underline; }
+.markdown a:hover { opacity: 0.8; }
+.markdown code:not(pre code) {
+  background: rgba(139, 148, 158, 0.15);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.8125rem;
+  color: #a5d6ff;
+}
+.markdown pre code.token-keyword { color: #7ee787; }
+.token-string { color: #a5d6ff; }
+.token-number { color: #79c0ff; }
+.token-comment { color: #8b949e; }
+.typing-dots { display: inline-flex; gap: 4px; }
+.typing-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+  animation: bounce 1.2s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}

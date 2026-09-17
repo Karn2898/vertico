@@ -82,14 +82,13 @@ export default function App() {
         setStreaming(false);
         setMessages((prev) => [...prev, { role: "system", content: "Stream error." }]);
       },
+      onDone: () => {
+        setStreaming(false);
+        setMessages((prev) =>
+          prev.map((m, i) => (i === prev.length - 1 ? { ...m, streaming: false } : m))
+        );
+      },
     });
-    // close the streaming token when SSE ends (best-effort)
-    setTimeout(() => {
-      setStreaming(false);
-      setMessages((prev) =>
-        prev.map((m, i) => (i === prev.length - 1 ? { ...m, streaming: false } : m))
-      );
-    }, 4000);
   };
 
   const openDiff = async () => {

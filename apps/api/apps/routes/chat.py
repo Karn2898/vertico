@@ -265,27 +265,33 @@ Answer questions about the code, the refactoring process, or errors concisely.
                     "content": str(result),
                 }
             )
+
     if not answered:
-        # Tool budget exhausted: run one final LLM call with tools stripped so
-        # the model must produce a text answer from what it already gathered.
         bare_llm = _get_llm(session)
-        try:
-            response = await bare_llm.ainvoke(
-                [*pending_messages, {"role": "user", "content":
-                    "You have used all your tool calls. Based on the tool results "
-                    "above, answer the user's question now. Do not call more tools."}]
-            )
-            token = getattr(response, "content", str(response))
-            if isinstance(token, list):
-                token = "".join(
-                    item.get("text", "") if isinstance(item, dict) else str(item)
-                    for item in token
+        if hasattr(bare_llm, "astream"):
+            full_token = ""
+            async for chunk in bare_llm.astream(pending_messages):
+                token = getattr(chunk, "content", None) or ""
+                full_token += token
+                yield f"data: {json.dumps({'content': token})}\n\n"
+            full_response = full_token
+        else:
+            try:
+                response = await bare_llm.ainvoke(
+                    [*pending_messages, {"role": "user", "content":
+                        "You have used all your tool calls. Based on the tool results "
+                        "above, answer the user's question now. Do not call more tools."}]
                 )
-        except Exception as exc:
-            logging.warning("final wrap-up LLM call failed: %s", exc)
-            token = "(I gathered information but could not compose a final answer.)"
-        if token:
-            full_response += token
+                token = getattr(response, "content", str(response))
+                if isinstance(token, list):
+                    token = "".join(
+                        item.get("text", "") if isinstance(item, dict) else str(item)
+                        for item in token
+                    )
+            except Exception as exc:
+                logging.warning("final wrap-up LLM call failed: %s", exc)
+                token = "(I gathered information but could not compose a final answer.)"
+            full_response = token
             yield f"data: {json.dumps({'content': token})}\n\n"
 
     _append_message(session_id, role="assistant", content=full_response)

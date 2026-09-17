@@ -138,7 +138,7 @@ export class ApiClient {
   streamChat(
     sessionId: string,
     text: string,
-    handlers: { onMessage: (data: any) => void; onError?: () => void }
+    handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void }
   ): () => void {
     const controller = new AbortController();
     (async () => {
@@ -174,6 +174,7 @@ export class ApiClient {
             }
           }
         }
+        handlers.onDone?.();
       } catch {
         handlers.onError?.();
       }
