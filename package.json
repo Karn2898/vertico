@@ -1,9 +1,24 @@
 {
+  "name": "vertico",
+  "displayName": "Vertico",
+  "version": "0.1.0",
+  "publisher": "vertico",
+  "description": "Vertico AI assistant for VS Code",
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "vsce package"
+  },
   "devDependencies": {
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.125.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@vscode/vsce": "^3.0.0"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
   }
 }
