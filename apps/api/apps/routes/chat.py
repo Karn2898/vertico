@@ -220,82 +220,87 @@ Answer questions about the code, the refactoring process, or errors concisely.
     pending_messages = messages
 
     answered = False
-    for round_index in range(max_tool_rounds):
-        response = await llm.ainvoke(pending_messages)
-        tool_calls = getattr(response, "tool_calls", []) or []
-        if not tool_calls:
-            token = getattr(response, "content", str(response))
-            if isinstance(token, list):
-                token = "".join(
-                    item.get("text", "") if isinstance(item, dict) else str(item)
-                    for item in token
-                )
-            full_response += token
-            yield f"data: {json.dumps({'content': token})}\n\n"
-            answered = True
-            break
-
-        logging.debug(
-            "chat round %d: tool calls %s",
-            round_index + 1,
-            [c.get("name") for c in tool_calls],
-        )
-
-        pending_messages = [*pending_messages, response]
-        for call in tool_calls:
-            tool = tool_map.get(call["name"])
-            if tool is None:
-                result = f"Unknown tool: {call['name']}"
-            else:
-                root_token = None
-                try:
-                    workspace_root = session.get("workspace_root")
-                    if workspace_root:
-                        root_token = set_active_repo_root(workspace_root)
-                    result = await tool.ainvoke(call.get("args", {}))
-                except Exception as exc:
-                    result = f"Tool error: {exc}"
-                finally:
-                    if root_token is not None:
-                        reset_active_repo_root(root_token)
-            pending_messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": call["id"],
-                    "content": str(result),
-                }
-            )
-
-    if not answered:
-        bare_llm = _get_llm(session)
-        if hasattr(bare_llm, "astream"):
-            full_token = ""
-            async for chunk in bare_llm.astream(pending_messages):
-                token = getattr(chunk, "content", None) or ""
-                full_token += token
-                yield f"data: {json.dumps({'content': token})}\n\n"
-            full_response = full_token
-        else:
-            try:
-                response = await bare_llm.ainvoke(
-                    [*pending_messages, {"role": "user", "content":
-                        "You have used all your tool calls. Based on the tool results "
-                        "above, answer the user's question now. Do not call more tools."}]
-                )
+    try:
+        for round_index in range(max_tool_rounds):
+            response = await llm.ainvoke(pending_messages)
+            tool_calls = getattr(response, "tool_calls", []) or []
+            if not tool_calls:
                 token = getattr(response, "content", str(response))
                 if isinstance(token, list):
                     token = "".join(
                         item.get("text", "") if isinstance(item, dict) else str(item)
                         for item in token
                     )
-            except Exception as exc:
-                logging.warning("final wrap-up LLM call failed: %s", exc)
-                token = "(I gathered information but could not compose a final answer.)"
-            full_response = token
-            yield f"data: {json.dumps({'content': token})}\n\n"
+                full_response += token
+                yield f"data: {json.dumps({'content': token})}\n\n"
+                answered = True
+                break
 
-    _append_message(session_id, role="assistant", content=full_response)
-    yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
+            logging.debug(
+                "chat round %d: tool calls %s",
+                round_index + 1,
+                [c.get("name") for c in tool_calls],
+            )
+
+            pending_messages = [*pending_messages, response]
+            for call in tool_calls:
+                tool = tool_map.get(call["name"])
+                if tool is None:
+                    result = f"Unknown tool: {call['name']}"
+                else:
+                    root_token = None
+                    try:
+                        workspace_root = session.get("workspace_root")
+                        if workspace_root:
+                            root_token = set_active_repo_root(workspace_root)
+                        result = await tool.ainvoke(call.get("args", {}))
+                    except Exception as exc:
+                        result = f"Tool error: {exc}"
+                    finally:
+                        if root_token is not None:
+                            reset_active_repo_root(root_token)
+                pending_messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": call["id"],
+                        "content": str(result),
+                    }
+                )
+
+        if not answered:
+            bare_llm = _get_llm(session)
+            if hasattr(bare_llm, "astream"):
+                full_token = ""
+                async for chunk in bare_llm.astream(pending_messages):
+                    token = getattr(chunk, "content", None) or ""
+                    full_token += token
+                    yield f"data: {json.dumps({'content': token})}\n\n"
+                full_response = full_token
+            else:
+                try:
+                    response = await bare_llm.ainvoke(
+                        [*pending_messages, {"role": "user", "content":
+                            "You have used all your tool calls. Based on the tool results "
+                            "above, answer the user's question now. Do not call more tools."}]
+                    )
+                    token = getattr(response, "content", str(response))
+                    if isinstance(token, list):
+                        token = "".join(
+                            item.get("text", "") if isinstance(item, dict) else str(item)
+                            for item in token
+                        )
+                except Exception as exc:
+                    logging.warning("final wrap-up LLM call failed: %s", exc)
+                    token = "(I gathered information but could not compose a final answer.)"
+                full_response = token
+                yield f"data: {json.dumps({'content': token})}\n\n"
+    except Exception as e:
+        logging.exception("chat stream failed for session %s", session_id)
+        yield f"data: {json.dumps({'node': 'error', 'content': f'Stream error: {e}'})}\n\n"
+    finally:
+        if full_response:
+            _append_message(session_id, role="assistant", content=full_response)
+        yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
 
 def _ensure_history(session_id: str):
    if session_id not in chat_histories:
