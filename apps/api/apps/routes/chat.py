@@ -31,6 +31,11 @@ def _extract_text_tool_calls(content: str) -> list[dict]:
             v = pmatch.group(2)
             if v.isdigit():
                 args[k] = int(v)
+            elif (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
+                try:
+                    args[k] = json.loads(v)
+                except Exception:
+                    args[k] = v
             else:
                 args[k] = v
         calls.append({
@@ -299,32 +304,36 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 )
 
         if not answered:
+            clean_messages = []
+            for msg in pending_messages:
+                if isinstance(msg, dict):
+                    clean_messages.append(msg)
+                elif hasattr(msg, "content"):
+                    r = getattr(msg, "type", "assistant")
+                    if r == "human":
+                        r = "user"
+                    clean_messages.append({"role": r, "content": str(getattr(msg, "content", ""))})
+
+            clean_messages.append({
+                "role": "user",
+                "content": "Based on the tool results above, provide a clear, final answer now. Do not call any more tools.",
+            })
+
             bare_llm = _get_llm(session)
-            if hasattr(bare_llm, "astream"):
-                full_token = ""
-                async for chunk in bare_llm.astream(pending_messages):
-                    token = getattr(chunk, "content", None) or ""
-                    full_token += token
-                    yield f"data: {json.dumps({'content': token})}\n\n"
-                full_response = full_token
-            else:
-                try:
-                    response = await bare_llm.ainvoke(
-                        [*pending_messages, {"role": "user", "content":
-                            "You have used all your tool calls. Based on the tool results "
-                            "above, answer the user's question now. Do not call more tools."}]
+            try:
+                response = await bare_llm.ainvoke(clean_messages)
+                token = getattr(response, "content", str(response))
+                if isinstance(token, list):
+                    token = "".join(
+                        item.get("text", "") if isinstance(item, dict) else str(item)
+                        for item in token
                     )
-                    token = getattr(response, "content", str(response))
-                    if isinstance(token, list):
-                        token = "".join(
-                            item.get("text", "") if isinstance(item, dict) else str(item)
-                            for item in token
-                        )
-                except Exception as exc:
-                    logging.warning("final wrap-up LLM call failed: %s", exc)
-                    token = "(I gathered information but could not compose a final answer.)"
-                full_response = token
-                yield f"data: {json.dumps({'content': token})}\n\n"
+            except Exception as exc:
+                logging.warning("final wrap-up LLM call failed: %s", exc)
+                token = "(I gathered the requested information but encountered an issue composing the final response.)"
+
+            full_response = token
+            yield f"data: {json.dumps({'content': token})}\n\n"
     except Exception as e:
         logging.exception("chat stream failed for session %s", session_id)
         yield f"data: {json.dumps({'node': 'error', 'content': f'Stream error: {e}'})}\n\n"
