@@ -4,11 +4,18 @@ from pathlib import Path
 import pytest
 
 from agent_core.workspace_tools import (
+    get_git_status,
     read_code_file,
     reset_active_repo_root,
     search_code,
     set_active_repo_root,
 )
+
+
+def test_get_git_status_returns_json():
+    result = json.loads(get_git_status.invoke({}))
+    assert isinstance(result, dict)
+    assert "status" in result
 
 
 def test_search_code_returns_bounded_structured_matches():

@@ -58,6 +58,12 @@ export class ApiClient {
     return (await res.json()) as Session;
   }
 
+  async listSessions(): Promise<Session[]> {
+    const res = await fetch(`${this.baseUrl}/sessions`);
+    if (!res.ok) return [];
+    return (await res.json()) as Session[];
+  }
+
   async runAgent(
     sessionId: string,
     graph: "refactor" | "bugfix" | "review",

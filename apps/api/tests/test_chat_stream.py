@@ -134,3 +134,56 @@ def test_stream_chat_uses_alternate_workspace_root(tmp_path, monkeypatch):
 
     asyncio.run(run())
 
+
+def test_stream_chat_parses_pseudo_xml_tool_calls(tmp_path, monkeypatch):
+    target_file = tmp_path / "app.py"
+    target_file.write_text("print('test app')\n", encoding="utf-8")
+
+    class FakeResponse:
+        def __init__(self, content="", tool_calls=None):
+            self.content = content
+            self.tool_calls = tool_calls or []
+
+    class FakeLLM:
+        def __init__(self):
+            self.calls = 0
+
+        async def ainvoke(self, messages):
+            self.calls += 1
+            if self.calls == 1:
+                return FakeResponse(
+                    content="""<tool_call>
+<function=read_code_file>
+<parameter=path>
+app.py
+</parameter>
+<parameter=start_line>
+1
+</parameter>
+<parameter=end_line>
+5
+</parameter>
+</function>
+</tool_call>"""
+                )
+            return FakeResponse("Parsed pseudo-xml tool call and read app.py successfully.")
+
+    fake_llm = FakeLLM()
+    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    chat.sessions["xml-sess"] = {
+        "workspace_root": str(tmp_path),
+        "agent_state": {"iterations": 0, "errors": None, "review_notes": ""},
+    }
+    chat.chat_histories["xml-sess"] = []
+
+    async def run():
+        chunks = [
+            chunk
+            async for chunk in chat._stream_chat("xml-sess", "search code in app")
+        ]
+        assert any("Parsed pseudo-xml tool call" in chunk for chunk in chunks)
+        assert fake_llm.calls == 2
+
+    asyncio.run(run())
+
+

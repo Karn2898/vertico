@@ -1,4 +1,5 @@
 import sys
+import re
 from pathlib import Path
 
 # Ensure packages/shared is on sys.path for agent_core imports
@@ -12,6 +13,32 @@ import json
 import importlib
 import logging
 from typing import Optional
+
+
+def _extract_text_tool_calls(content: str) -> list[dict]:
+    """Fallback parser for LLMs (such as Nemotron/DeepSeek/Qwen) that output pseudo-XML tool call blocks in raw text."""
+    if not isinstance(content, str) or "<function=" not in content:
+        return []
+    calls = []
+    func_matches = re.finditer(r"<function=([\w_]+)>(.*?)</function>", content, re.DOTALL)
+    for i, match in enumerate(func_matches):
+        fn_name = match.group(1)
+        body = match.group(2)
+        args = {}
+        param_matches = re.finditer(r"<parameter=([\w_]+)>\s*(.*?)\s*</parameter>", body, re.DOTALL)
+        for pmatch in param_matches:
+            k = pmatch.group(1)
+            v = pmatch.group(2)
+            if v.isdigit():
+                args[k] = int(v)
+            else:
+                args[k] = v
+        calls.append({
+            "id": f"text-call-{i+1}",
+            "name": fn_name,
+            "args": args,
+        })
+    return calls
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -224,13 +251,17 @@ Answer questions about the code, the refactoring process, or errors concisely.
         for round_index in range(max_tool_rounds):
             response = await llm.ainvoke(pending_messages)
             tool_calls = getattr(response, "tool_calls", []) or []
+            token = getattr(response, "content", str(response))
+            if isinstance(token, list):
+                token = "".join(
+                    item.get("text", "") if isinstance(item, dict) else str(item)
+                    for item in token
+                )
+
+            if not tool_calls and isinstance(token, str):
+                tool_calls = _extract_text_tool_calls(token)
+
             if not tool_calls:
-                token = getattr(response, "content", str(response))
-                if isinstance(token, list):
-                    token = "".join(
-                        item.get("text", "") if isinstance(item, dict) else str(item)
-                        for item in token
-                    )
                 full_response += token
                 yield f"data: {json.dumps({'content': token})}\n\n"
                 answered = True

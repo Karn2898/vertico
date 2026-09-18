@@ -1,5 +1,6 @@
 import json
 import re
+import subprocess
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -111,7 +112,49 @@ def read_code_file(path: str, start_line: int = 1, end_line: int = 200) -> str:
     )
 
 
-workspace_tools = [search_code, read_code_file]
+@tool
+def get_git_status() -> str:
+    """Check git status of active workspace to see staged, unstaged, and untracked files ready for commit."""
+    repo_root = _ACTIVE_REPO_ROOT.get()
+    try:
+        res = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if res.returncode != 0:
+            return json.dumps({"error": f"git status failed: {res.stderr}"})
+        lines = [line for line in res.stdout.splitlines() if line.strip()]
+        if not lines:
+            return json.dumps({"status": "clean", "staged": [], "modified": [], "untracked": []})
+
+        staged = []
+        modified = []
+        untracked = []
+        for line in lines:
+            x = line[0]
+            y = line[1]
+            filepath = line[3:].strip()
+            if x in ("A", "M", "R", "D", "C"):
+                staged.append({"file": filepath, "action": x})
+            if y in ("M", "D"):
+                modified.append({"file": filepath, "action": y})
+            if x == "?" and y == "?":
+                untracked.append({"file": filepath})
+
+        return json.dumps({
+            "status": "dirty",
+            "staged_ready_to_commit": staged,
+            "unstaged_modified": modified,
+            "untracked": untracked,
+        })
+    except Exception as exc:
+        return json.dumps({"error": f"Failed to get git status: {exc}"})
+
+
+workspace_tools = [search_code, read_code_file, get_git_status]
 
 
 def set_active_repo_root(path: str | Path):

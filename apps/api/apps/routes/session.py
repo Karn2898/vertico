@@ -11,6 +11,7 @@ from ..schemas.session_schemas import (
 from ..services.session_service import (
     create_session,
     get_session,
+    get_all_sessions,
     delete_session,
     update_status,
 )
@@ -30,6 +31,11 @@ def create(req: CreateSessionRequest):
         workspace_root=req.workspace_root,
     )
     return _to_response(session)
+
+
+@router.get("/", response_model=list[SessionResponse])
+def list_all():
+    return [_to_response(s) for s in get_all_sessions()]
 
 
 @router.get("/{session_id}", response_model=SessionResponse)

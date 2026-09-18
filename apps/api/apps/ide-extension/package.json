@@ -1,6 +1,7 @@
 {
   "name": "vertico",
   "displayName": "Vertico",
+  "publisher": "Karn2898",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.85.0"
