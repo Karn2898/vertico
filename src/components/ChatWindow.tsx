@@ -41,16 +41,16 @@ export function ChatWindow({ messages, streaming, onSend }: Props) {
       <div className="p-3 border-t border-border flex gap-2">
         <input
           ref={inputRef}
-          className="flex-1 bg-muted rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+          className="flex-1 bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
           placeholder="Ask about your code..."
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <button
           onClick={handleSend}
           disabled={streaming}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          className="bg-[#6e2a3a] text-[#f1e4d9] px-4 py-2 rounded-lg text-sm hover:bg-[#7d3244] disabled:opacity-50 transition-colors"
         >
-          {streaming ? "..." : "Send"}
+          {streaming ? "…" : "Send"}
         </button>
       </div>
     </div>
