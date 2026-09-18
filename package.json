@@ -2,7 +2,7 @@
   "name": "vertico",
   "displayName": "Vertico",
   "version": "0.1.0",
-  "publisher": "vertico",
+  "publisher": "Karn2898",
   "description": "Vertico AI assistant for VS Code",
   "main": "./out/extension.js",
   "activationEvents": [],
