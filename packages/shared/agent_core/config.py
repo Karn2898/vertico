@@ -121,9 +121,8 @@ def get_llm(
             base_url=cfg["base_url"],
             model=model or cfg["model"],
             extra_body=cfg.get("extra_body", {}),
-            # Nemotron reasoning (enable_thinking) can take >120s before the first
-            # content chunk — disable the stream chunk timeout so it isn't killed.
-            stream_chunk_timeout=None,
+
+           stream_chunk_timeout=None,
         )
 
     if provider == "gemini":
