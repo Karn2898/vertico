@@ -16,12 +16,12 @@ export function MessageBubble({ message }: Props) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        className={`px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? "bg-primary text-primary-foreground"
+            ? "bubble-user"
             : isSystem
-            ? "bg-destructive/10 text-destructive border border-destructive/20"
-            : "bg-muted text-foreground border border-border"
+            ? "bubble-system"
+            : "bubble-assistant"
         }`}
       >
         {/* node label badge */}
@@ -40,15 +40,26 @@ export function MessageBubble({ message }: Props) {
           )
         ) : null}
 
-        {/* Streaming indicator */}
-        {message?.streaming && (
-          <span className="inline-flex items-center gap-1 mt-2">
-            <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-            <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full animate-pulse" style={{ animationDelay: "120ms" }} />
-            <span className="inline-block w-1.5 h-1.5 bg-primary rounded-full animate-pulse" style={{ animationDelay: "240ms" }} />
+        {/* Thinking state: replaces the bubble while the agent works with no content yet */}
+        {message?.streaming && !message?.content?.trim() && <ThinkingIndicator />}
+
+        {/* Streaming indicator (inline, once content is flowing) */}
+        {message?.streaming && !!message?.content?.trim() && (
+          <span className="thinking-dots mt-2">
+            <span /><span /><span />
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+function ThinkingIndicator() {
+  return (
+    <div className="thinking" aria-label="Vertico is thinking">
+      <span className="thinking-dots">
+        <span /><span /><span />
+      </span>
     </div>
   );
 }
@@ -73,12 +84,12 @@ function CodeAware({ content }: { content: string }) {
           return (
             <div key={i} className="rounded-lg overflow-hidden border border-border">
               {lang && (
-                <div className="bg-[#1a1a2e] text-[#8b949e] text-xs px-3 py-1.5 border-b border-border flex items-center justify-between">
+                <div className="bg-[#211a18] text-[#9c8c82] text-xs px-3 py-1.5 border-b border-border flex items-center justify-between">
                   <span>{lang}</span>
                   <span className="text-[10px] opacity-50">Vertico</span>
                 </div>
               )}
-              <pre className="bg-[#0d1117] p-3 text-xs overflow-x-auto font-mono leading-relaxed">
+              <pre className="bg-[#181311] p-3 text-xs overflow-x-auto font-mono leading-relaxed">
                 <code dangerouslySetInnerHTML={{ __html: highlightSyntax(code, lang) }} />
               </pre>
             </div>
@@ -111,7 +122,7 @@ function renderMarkdown(text: string): string {
 
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong class='font-semibold'>$1</strong>");
   html = html.replace(/\*(.+?)\*/g, "<em class='italic'>$1</em>");
-  html = html.replace(/`([^`]+)`/g, "<code class='bg-muted/60 px-1 py-0.5 rounded text-xs font-mono'>$1</code>");
+  html = html.replace(/`([^`]+)`/g, "<code class='code-chip'>$1</code>");
 
   html = html.replace(
     /^- (.+)/gm,
