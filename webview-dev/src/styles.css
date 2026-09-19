@@ -28,7 +28,19 @@ body {
 .border-b { border-bottom: 1px solid var(--border); }
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
 .flex-1 { flex: 1 1 0%; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.w-full { width: 100%; }
+.w-screen { width: 100vw; }
+.relative { position: relative; }
+.fixed { position: fixed; }
+.absolute { position: absolute; }
+.shrink-0 { flex-shrink: 0; }
+.min-w-0 { min-width: 0; }
+.min-h-0 { min-height: 0; }
 .h-screen { height: 100vh; }
 .h-full { height: 100%; }
 .overflow-y-auto { overflow-y: auto; }
@@ -207,6 +219,10 @@ input::placeholder { color: var(--dim); }
   border-radius: 6px;
   cursor: pointer;
   transition: color 0.15s linear, background 0.15s linear;
+  position: absolute;
+  top: 10px;               /* flush with the very top of the interface */
+  right: 14px;             /* pinned to the top right corner */
+  z-index: 60;             /* above the side panel overlay backdrop (z-45) */
 }
 .hamburger-btn:hover {
   color: var(--fg);
@@ -217,11 +233,13 @@ input::placeholder { color: var(--dim); }
 .side-panel-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 7, 0.5);
+  background: rgba(10, 8, 7, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 45;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s linear;
+  transition: opacity 0.25s linear;
 }
 .side-panel-backdrop.open {
   opacity: 1;
@@ -235,10 +253,15 @@ input::placeholder { color: var(--dim); }
   bottom: 0;
   width: 360px;
   max-width: 90vw;
-  background: #1B1D21; /* cool slate-charcoal reference zone */
-  border: none; /* distinctly separated from chat's warm ink #14100F by color zone alone */
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  background: rgba(27, 29, 33, 0.92); /* cool slate-charcoal, slightly translucent */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px 0 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-right: none; /* flush against the window edge */
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.55);
   z-index: 50;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
