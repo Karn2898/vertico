@@ -12,7 +12,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_repo_root = _Path(__file__).resolve().parents[2]
+# Walk up to the repo root (dir containing packages/shared) — works from
+# any location, including worktrees and Docker, not just this exact layout.
+def _find_repo_root() -> _Path:
+    for candidate in _Path(__file__).resolve().parents:
+        if (candidate / "packages" / "shared").is_dir():
+            return candidate
+    return _Path(__file__).resolve().parents[2]
+
+_repo_root = _find_repo_root()
 _packages_root = _repo_root / "packages"
 _db_path = _repo_root / "packages" / "db"
 _shared_path = _repo_root / "packages" / "shared"
