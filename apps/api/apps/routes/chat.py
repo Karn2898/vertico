@@ -1,12 +1,5 @@
 import sys
 import re
-from pathlib import Path
-
-# Ensure packages/shared is on sys.path for agent_core imports
-_repo_root = Path(__file__).resolve().parents[4]
-_shared_path = _repo_root / "packages" / "shared"
-if str(_shared_path) not in sys.path:
-    sys.path.insert(0, str(_shared_path))
 
 from datetime import datetime, timezone
 import json
