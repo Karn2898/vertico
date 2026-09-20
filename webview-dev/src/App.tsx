@@ -3,7 +3,7 @@ import { ChatWindow } from "@src/components/ChatWindow";
 import { DiffPanel } from "@src/components/DiffPanel";
 import { FileTree } from "@src/components/FileTree";
 import { ApiClient } from "@src/services/ApiClient";
-import { SidePane } from "./components/SidePane";
+import { SidePane, SideTab } from "./components/SidePane";
 import { QuickPick, SessionItem } from "./components/QuickPick";
 
 const API_URL =
@@ -23,6 +23,7 @@ export default function App() {
 
   // Layout state: side panel overlay & QuickPick overlay
   const [sideOpen, setSideOpen] = useState<boolean>(false);
+  const [sideTab, setSideTab] = useState<SideTab>("diffs");
   const [quickPickOpen, setQuickPickOpen] = useState<boolean>(false);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
 
@@ -125,31 +126,48 @@ export default function App() {
 
   const handlePickSession = (session: SessionItem) => {
     setSessionId(session.session_id);
-    setMessages([{ role: "system", content: `Switched to session ${session.filename || session.session_id}` }]);
+    api
+      .getSessionState(session.session_id)
+      .then((state) => {
+        setMessages((prev) => {
+          const history = (state?.messages ?? []).map(
+            (m: any) => ({ role: m.role, content: m.content })
+          );
+          return history.length > 0
+            ? history
+            : [{ role: "system", content: `Switched to session ${session.filename || session.session_id}` }];
+        });
+      })
+      .catch(() =>
+        setMessages([{ role: "system", content: `Switched to session ${session.filename || session.session_id}` }])
+      );
     api.getDiff(session.session_id).then((d) => setDiff(d)).catch(() => {});
   };
 
   return (
     <div className="flex flex-col h-screen w-screen bg-background text-foreground font-sans overflow-hidden">
-      {/* Header bar: Minimal - just VERTICO wordmark + hamburger icon */}
-      <header className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background">
+      {/* Minimal header: VERTICO wordmark only */}
+      <header className="flex items-center border-b border-border px-4 py-2.5 bg-background">
         <span className="font-bold text-sm tracking-wider text-primary">VERTICO</span>
-        <button
-          onClick={() => {
-            fetchSessions();
-            setSideOpen((open) => !open);
-          }}
-          className="hamburger-btn"
-          aria-label="Toggle side panel"
-          title="Toggle side panel"
-        >
-          <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="0" y1="1" x2="18" y2="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <line x1="0" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <line x1="0" y1="13" x2="18" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
       </header>
+
+      {/* Hamburger: fixed top-right corner of the whole interface */}
+      <button
+        onClick={async () => {
+          await fetchSessions();
+          setSideTab("sessions");
+          setSideOpen(true);
+        }}
+        className="hamburger-btn-fixed"
+        aria-label="Open sessions panel"
+        title="Open sessions panel"
+      >
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0" y1="1" x2="18" y2="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="0" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="0" y1="13" x2="18" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
 
       {/* Main layout */}
       <div className="flex-1 flex flex-row overflow-hidden min-h-0 relative">
@@ -162,6 +180,8 @@ export default function App() {
         <SidePane
           open={sideOpen}
           onClose={() => setSideOpen(false)}
+          tab={sideTab}
+          onTabChange={setSideTab}
           diff={
             <DiffPanel
               diff={diff}

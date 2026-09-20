@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { SessionItem } from "./QuickPick";
 
 export type SideTab = "diffs" | "sessions" | "context";
@@ -14,6 +14,8 @@ interface Props {
   onSelectSession: (session: SessionItem) => void;
   apiStatus: string;
   onOpenQuickPick: () => void;
+  tab: SideTab;
+  onTabChange: (tab: SideTab) => void;
 }
 
 export function SidePane({
@@ -27,9 +29,9 @@ export function SidePane({
   onSelectSession,
   apiStatus,
   onOpenQuickPick,
+  tab,
+  onTabChange: setTab,
 }: Props) {
-  const [tab, setTab] = useState<SideTab>("diffs");
-
   const isConnected = apiStatus.toLowerCase().startsWith("connect");
 
   return (
@@ -52,7 +54,7 @@ export function SidePane({
             {(["diffs", "sessions", "context"] as SideTab[]).map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => setTab(t as SideTab)}
                 className={`side-panel-tab ${tab === t ? "active" : ""}`}
               >
                 {t === "diffs" ? "Diffs" : t === "sessions" ? "Sessions" : "Context"}

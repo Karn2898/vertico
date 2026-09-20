@@ -219,14 +219,33 @@ input::placeholder { color: var(--dim); }
   border-radius: 6px;
   cursor: pointer;
   transition: color 0.15s linear, background 0.15s linear;
-  position: absolute;
-  top: 10px;               /* flush with the very top of the interface */
-  right: 14px;             /* pinned to the top right corner */
-  z-index: 60;             /* above the side panel overlay backdrop (z-45) */
 }
 .hamburger-btn:hover {
   color: var(--fg);
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* Hamburger pinned to the very top-right corner of the viewport */
+.hamburger-btn-fixed {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  z-index: 60;  /* above side panel backdrop (z-45) and panel (z-50) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s linear, background 0.15s linear;
+}
+.hamburger-btn-fixed:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 /* --- side panel overlay (cool slate-charcoal reference zone) --- */
