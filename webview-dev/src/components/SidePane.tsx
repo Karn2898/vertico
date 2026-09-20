@@ -1,7 +1,19 @@
 import React from "react";
 import { SessionItem } from "./QuickPick";
+import { DiffsList } from "./DiffsList";
+import { ApiClient } from "@src/services/ApiClient";
 
 export type SideTab = "diffs" | "sessions" | "context";
+
+interface DiffData {
+  session_id: string;
+  filename: string;
+  has_changes: boolean;
+  unified: string;
+  lines_added: number;
+  lines_removed: number;
+  status: string;
+}
 
 interface Props {
   open: boolean;
@@ -12,10 +24,12 @@ interface Props {
   sessions: SessionItem[];
   currentSessionId: string | null;
   onSelectSession: (session: SessionItem) => void;
+  onSelectDiff: (diff: DiffData) => void;
   apiStatus: string;
   onOpenQuickPick: () => void;
   tab: SideTab;
   onTabChange: (tab: SideTab) => void;
+  api: ApiClient;
 }
 
 export function SidePane({
@@ -27,10 +41,12 @@ export function SidePane({
   sessions,
   currentSessionId,
   onSelectSession,
+  onSelectDiff,
   apiStatus,
   onOpenQuickPick,
   tab,
   onTabChange: setTab,
+  api,
 }: Props) {
   const isConnected = apiStatus.toLowerCase().startsWith("connect");
 
@@ -81,39 +97,12 @@ export function SidePane({
         {/* Panel Content */}
         <div className="side-panel-content">
           {tab === "diffs" && (
-            <div className="flex flex-col h-full overflow-hidden">
-              {diffData ? (
-                <>
-                  <div className="p-2 border-b border-white/5">
-                    <button
-                      className="side-panel-row active"
-                      title="Current modified diff"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs text-[#f1e4d9] font-medium truncate">
-                          {diffData.filename || "Active session changes"}
-                        </span>
-                        <div className="flex items-center gap-1.5 text-xs font-mono">
-                          <span className="text-emerald-400">+{diffData.lines_added ?? 0}</span>
-                          <span className="text-rose-400">-{diffData.lines_removed ?? 0}</span>
-                        </div>
-                      </div>
-                      <div className="text-[11px] text-muted truncate mt-0.5">
-                        Unified code review diff
-                      </div>
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-hidden">{diff}</div>
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted text-xs">
-                  <p className="font-medium text-[#f1e4d9]">No active diffs</p>
-                  <p className="text-dim text-[11px] mt-1">
-                    Ask Vertico to refactor or edit code to review diffs here.
-                  </p>
-                </div>
-              )}
-            </div>
+            <DiffsList
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              onSelectDiff={onSelectDiff}
+              api={api}
+            />
           )}
 
           {tab === "sessions" && (

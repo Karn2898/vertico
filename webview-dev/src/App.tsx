@@ -13,6 +13,16 @@ const API_URL =
 
 const api = new ApiClient(API_URL);
 
+interface DiffData {
+  session_id: string;
+  filename: string;
+  has_changes: boolean;
+  unified: string;
+  lines_added: number;
+  lines_removed: number;
+  status: string;
+}
+
 export default function App() {
   const [messages, setMessages] = useState<any[]>([]);
   const [diff, setDiff] = useState<any>(null);
@@ -144,6 +154,19 @@ export default function App() {
     api.getDiff(session.session_id).then((d) => setDiff(d)).catch(() => {});
   };
 
+  const handleSelectDiff = (diffData: DiffData) => {
+    setDiff({
+      has_changes: diffData.has_changes,
+      diff: {
+        unified: diffData.unified,
+        lines_added: diffData.lines_added,
+        lines_removed: diffData.lines_removed,
+      },
+      status: diffData.status,
+      filename: diffData.filename,
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Minimal header: VERTICO wordmark only */}
@@ -194,11 +217,13 @@ export default function App() {
           sessions={sessions}
           currentSessionId={sessionId}
           onSelectSession={handlePickSession}
+          onSelectDiff={handleSelectDiff}
           apiStatus={apiStatus}
           onOpenQuickPick={() => {
             fetchSessions();
             setQuickPickOpen(true);
           }}
+          api={api}
         />
       </div>
 
