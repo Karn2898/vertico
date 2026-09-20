@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatWindow } from "@src/components/ChatWindow";
 import { DiffPanel } from "@src/components/DiffPanel";
 import { FileTree } from "@src/components/FileTree";
 import { ApiClient } from "@src/services/ApiClient";
 import { SidePane, SideTab } from "./components/SidePane";
 import { QuickPick, SessionItem } from "./components/QuickPick";
+import { ContextChips, ContextChip } from "./components/ContextChips";
+import { CheckpointManager } from "./components/CheckpointManager";
 
 const API_URL =
   (window as any).__VERTICO_API__ ||
@@ -23,6 +25,15 @@ interface DiffData {
   status: string;
 }
 
+interface Checkpoint {
+  id: string;
+  timestamp: number;
+  label: string;
+  sessionId: string;
+  files: string[];
+  diffSnapshot: any;
+}
+
 export default function App() {
   const [messages, setMessages] = useState<any[]>([]);
   const [diff, setDiff] = useState<any>(null);
@@ -30,6 +41,12 @@ export default function App() {
   const [streaming, setStreaming] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<string>("connecting…");
+
+  // Context chips state
+  const [contextChips, setContextChips] = useState<ContextChip[]>([]);
+
+  // Checkpoint state
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
 
   // Layout state: side panel overlay & QuickPick overlay
   const [sideOpen, setSideOpen] = useState<boolean>(false);
@@ -167,12 +184,65 @@ export default function App() {
     });
   };
 
+  // Context chips handlers
+  const addContextChip = useCallback((chip: Omit<ContextChip, "id">) => {
+    const newChip: ContextChip = {
+      ...chip,
+      id: `chip_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    };
+    setContextChips((prev) => [...prev, newChip]);
+  }, []);
+
+  const removeContextChip = useCallback((chipId: string) => {
+    setContextChips((prev) => prev.filter((c) => c.id !== chipId));
+  }, []);
+
+  // Checkpoint handlers
+  const createCheckpoint = useCallback(async () => {
+    if (!sessionId || !diff) return;
+    setIsCreatingCheckpoint(true);
+    try {
+      const patch = await api.preparePatch(sessionId);
+      const checkpoint: Checkpoint = {
+        id: `cp_${Date.now()}`,
+        timestamp: Date.now(),
+        label: `Checkpoint ${new Date().toLocaleTimeString()}`,
+        sessionId,
+        files: patch.files,
+        diffSnapshot: diff,
+      };
+      setCheckpoints((prev) => [checkpoint, ...prev.slice(0, 9)]);
+    } catch (error) {
+      console.error("Failed to create checkpoint:", error);
+    } finally {
+      setIsCreatingCheckpoint(false);
+    }
+  }, [sessionId, api, diff]);
+
+  const restoreCheckpoint = useCallback((checkpoint: Checkpoint) => {
+    setDiff(checkpoint.diffSnapshot);
+    setMessages((prev) => [...prev, { role: "system", content: `Restored checkpoint: ${checkpoint.label}` }]);
+  }, []);
+
+  const deleteCheckpoint = useCallback((checkpointId: string) => {
+    setCheckpoints((prev) => prev.filter((c) => c.id !== checkpointId));
+  }, []);
+
+  const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
+
   return (
     <div className="flex flex-col h-screen w-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Minimal header: VERTICO wordmark only */}
       <header className="flex items-center border-b border-border px-4 py-2.5 bg-background">
         <span className="font-bold text-sm tracking-wider text-primary">VERTICO</span>
       </header>
+
+      {/* Context chips bar - always visible at top */}
+      <ContextChips
+        chips={contextChips}
+        onRemove={removeContextChip}
+        onAdd={addContextChip}
+      />
 
       {/* Hamburger: fixed top-right corner of the whole interface */}
       <button
@@ -206,14 +276,29 @@ export default function App() {
           tab={sideTab}
           onTabChange={setSideTab}
           diff={
-            <DiffPanel
-              diff={diff}
-              onAccept={() => sessionId && api.acceptDiff(sessionId).then(() => setDiff(null))}
-              onReject={() => sessionId && api.rejectDiff(sessionId).then(() => setDiff(null))}
-            />
+            <>
+              <DiffPanel
+                diff={diff}
+                onAccept={() => sessionId && api.acceptDiff(sessionId).then(() => setDiff(null))}
+                onReject={() => sessionId && api.rejectDiff(sessionId).then(() => setDiff(null))}
+              />
+              <CheckpointManager
+                sessionId={sessionId}
+                api={api}
+                diff={diff}
+                onRestore={restoreCheckpoint}
+              />
+            </>
           }
           diffData={diff}
-          context={<FileTree context={context} />}
+          context={
+            <FileTree
+              context={context}
+              chips={contextChips}
+              onRemoveChip={removeContextChip}
+              onAddChip={addContextChip}
+            />
+          }
           sessions={sessions}
           currentSessionId={sessionId}
           onSelectSession={handlePickSession}
