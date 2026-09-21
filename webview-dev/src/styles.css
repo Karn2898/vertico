@@ -693,7 +693,7 @@ input::placeholder { color: var(--dim); }
   color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis.
+  text-overflow: ellipsis;
 }
 .checkpoint-meta {
   font-size: 0.6rem;
@@ -704,7 +704,7 @@ input::placeholder { color: var(--dim); }
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0.
+  flex-shrink: 0;
 }
 .checkpoint-restore-btn {
   display: inline-flex;
@@ -732,11 +732,497 @@ input::placeholder { color: var(--dim); }
   height: 20px;
   color: var(--muted);
   border-radius: 4px;
-  transition: color 0.1s, background 0.1s.
+  transition: color 0.1s, background 0.1s;
 }
 .checkpoint-delete-btn:hover {
   color: #f43f5e;
   background: rgba(244, 63, 94, 0.1);
+}
+
+/* --- Inline Diff Panel --- */
+.diff-hunk {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.diff-hunk:hover {
+  border-color: rgba(184, 147, 90, 0.3);
+}
+.diff-hunk.accepted {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+.diff-hunk.rejected {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.1);
+}
+.diff-hunk.decided {
+  opacity: 0.7;
+}
+
+.diff-hunk-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.7rem;
+}
+.diff-hunk-header .text-blue-400 {
+  font-family: ui-monospace, monospace;
+  font-weight: 500;
+}
+
+.hunk-action-btn {
+  white-space: nowrap;
+}
+.hunk-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hunk-status {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.diff-hunk-lines {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.diff-line {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.diff-summary {
+  padding: 8px;
+  font-size: 0.7rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Chat Message Redesign --- */
+
+/* Message row containers */
+.message-row {
+  display: flex;
+  animation: messageEnter 300ms ease-out forwards;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.message-row.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.message-row.user {
+  justify-content: flex-end;
+}
+.message-row.system {
+  justify-content: center;
+}
+
+/* Agent message - free flowing, no bubble */
+.agent-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  width: 100%;
+  animation: messageEnter 300ms ease-out forwards;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.agent-message.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.agent-message--thinking {
+  padding-left: 48px; /* align with avatar */
+}
+
+.agent-message-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Agent header (avatar + label) */
+.agent-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-left: 2px;
+}
+.agent-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  opacity: 0.6;
+}
+.agent-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+}
+.agent-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.agent-node-badge {
+  font-size: 0.65rem;
+  color: var(--gold);
+  background: rgba(184, 147, 90, 0.12);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  text-transform: capitalize;
+  width: fit-content;
+}
+
+/* Agent content area */
+.agent-content {
+  padding-left: 42px; /* align with avatar content */
+  min-height: 1.5em;
+}
+
+/* Markdown typography for agent messages */
+.agent-markdown {
+  line-height: 1.7;
+  color: var(--fg);
+}
+.agent-p {
+  margin: 0 0 0.75em 0;
+  line-height: 1.7;
+}
+.agent-p:last-child {
+  margin-bottom: 0;
+}
+.agent-h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1.5em 0 0.5em 0;
+  color: var(--fg);
+}
+.agent-h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.25em 0 0.5em 0;
+  color: var(--fg);
+}
+.agent-h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1em 0 0.5em 0;
+  color: var(--fg);
+}
+.agent-strong {
+  font-weight: 600;
+  color: var(--fg);
+}
+.agent-em {
+  font-style: italic;
+  color: var(--muted);
+}
+.agent-link {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.agent-link:hover {
+  opacity: 0.8;
+}
+.agent-inline-code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.875em;
+  background: rgba(20, 16, 15, 0.6);
+  padding: 0.125em 0.375em;
+  border-radius: 4px;
+  color: #e8cfb5;
+}
+.agent-ul, .agent-ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+.agent-li {
+  margin: 0.25em 0;
+  line-height: 1.6;
+}
+.agent-li::marker {
+  color: var(--muted);
+}
+
+/* Code blocks */
+.agent-code-blocks {
+  width: 100%;
+}
+.agent-code-block {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.agent-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.agent-copy-btn {
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.agent-copy-btn:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+.agent-code-block pre {
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.agent-code-block code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+
+/* Syntax highlighting tokens */
+.token-keyword { color: #7ee787; }
+.token-string { color: #a5d6ff; }
+.token-number { color: #79c0ff; }
+.token-comment { color: #8b949e; }
+
+/* Thinking indicator */
+.agent-thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  padding: 8px 0;
+}
+.agent-thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.agent-thinking-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: agentPulse 1.4s ease-in-out infinite;
+  opacity: 0.4;
+}
+.agent-thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.agent-thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes agentPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Streaming cursor */
+.agent-streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: var(--gold);
+  margin-left: 2px;
+  animation: cursorBlink 1s ease-in-out infinite;
+  vertical-align: text-bottom;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Hover-reveal action row */
+.agent-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 4px 42px;
+  border-top: 1px solid transparent;
+  margin-top: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 200ms ease, transform 200ms ease, border-color 200ms ease;
+}
+.agent-message:hover .agent-actions,
+.agent-message.hovered .agent-actions {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: var(--border);
+}
+.agent-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.agent-action-btn:hover:not(:disabled) {
+  color: var(--fg);
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+.agent-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.agent-action-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .agent-message {
+    max-width: 100%;
+  }
+  .agent-content {
+    padding-left: 12px;
+  }
+  .agent-header {
+    padding-left: 0;
+  }
+  .agent-actions {
+    padding-left: 12px;
+    flex-wrap: wrap;
+  }
+  .agent-action-btn span {
+    display: none;
+  }
+  .agent-action-btn {
+    padding: 8px;
+  }
+}
+
+/* User bubble entrance animation */
+@keyframes messageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure existing bubble styles still work for user messages */
+.bubble-user {
+  background: var(--wine);
+  border-radius: 18px 18px 4px 18px;
+  color: #f5e9e0;
+  max-width: 70%;
+}
+.bubble-user:hover { background: var(--wine-hover); }
+
+.bubble-system {
+  background: rgba(110, 42, 58, 0.12);
+  border: 1px solid rgba(110, 42, 58, 0.35);
+  color: var(--muted);
+  border-radius: 12px;
+  max-width: 80%;
+}
+
+.thinking {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border-left: 2px solid var(--gold);
+  border-radius: 4px 18px 18px 18px;
+  padding: 0.875rem 1.25rem;
+  width: fit-content;
+  overflow: hidden;
+}
+.thinking::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(
+    circle at 40% 50%,
+    var(--gold-glow),
+    rgba(110, 42, 58, 0.25) 45%,
+    transparent 70%
+  );
+  animation: vertico-breathe 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.thinking-dots {
+  display: inline-flex;
+  gap: 6px;
+  position: relative;
+}
+.thinking-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: vertico-pulse 1.6s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.25s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.5s; }
+
+@keyframes vertico-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
+@keyframes vertico-breathe {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 0.9; transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-dots span,
+  .thinking::before,
+  .agent-thinking-dots span,
+  .agent-streaming-cursor {
+    animation: none;
+  }
+  .thinking-dots span { opacity: 0.7; }
+  .agent-thinking-dots span { opacity: 0.7; }
+  .message-row, .agent-message {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 

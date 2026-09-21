@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { MessageBubble } from "./MessageBubble";
+import { AgentMessage } from "./AgentMessage";
 
 interface Props {
   messages: any[];
@@ -31,9 +32,23 @@ export function ChatWindow({ messages, streaming, onSend }: Props) {
             Open a file and run <strong>Vertico: Refactor</strong> to start.
           </p>
         )}
-        {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} />
-        ))}
+        {messages.map((msg, i) => {
+          const isUser = msg?.role === "user";
+          const isSystem = msg?.role === "system";
+          if (isUser) {
+            return <MessageBubble key={i} message={msg} />;
+          }
+          if (isSystem) {
+            return (
+              <div key={i} className="message-row system">
+                <div className="bubble-system px-4 py-3 text-sm leading-relaxed max-w-[80%] text-center">
+                  {msg.content}
+                </div>
+              </div>
+            );
+          }
+          return <AgentMessage key={i} message={msg} index={i} messages={messages} streaming={streaming} />;
+        })}
         <div ref={bottomRef} />
       </div>
 

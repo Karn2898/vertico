@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatWindow } from "@src/components/ChatWindow";
 import { DiffPanel } from "@src/components/DiffPanel";
+import { InlineDiffPanel } from "@src/components/InlineDiffPanel";
 import { FileTree } from "@src/components/FileTree";
 import { ApiClient } from "@src/services/ApiClient";
 import { SidePane, SideTab } from "./components/SidePane";
@@ -47,6 +48,10 @@ export default function App() {
 
   // Checkpoint state
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+
+  // Per-hunk diff decisions
+  const [acceptedHunks, setAcceptedHunks] = useState<Set<number>>(new Set());
+  const [rejectedHunks, setRejectedHunks] = useState<Set<number>>(new Set());
 
   // Layout state: side panel overlay & QuickPick overlay
   const [sideOpen, setSideOpen] = useState<boolean>(false);
@@ -153,6 +158,8 @@ export default function App() {
 
   const handlePickSession = (session: SessionItem) => {
     setSessionId(session.session_id);
+    setAcceptedHunks(new Set());
+    setRejectedHunks(new Set());
     api
       .getSessionState(session.session_id)
       .then((state) => {
@@ -182,6 +189,8 @@ export default function App() {
       status: diffData.status,
       filename: diffData.filename,
     });
+    setAcceptedHunks(new Set());
+    setRejectedHunks(new Set());
   };
 
   // Context chips handlers
@@ -196,6 +205,65 @@ export default function App() {
   const removeContextChip = useCallback((chipId: string) => {
     setContextChips((prev) => prev.filter((c) => c.id !== chipId));
   }, []);
+
+  // Per-hunk diff handlers
+  const handleAcceptHunk = useCallback((hunkIndex: number) => {
+    setAcceptedHunks((prev) => new Set([...prev, hunkIndex]));
+    setRejectedHunks((prev) => {
+      const next = new Set(prev);
+      next.delete(hunkIndex);
+      return next;
+    });
+  }, []);
+
+  const handleRejectHunk = useCallback((hunkIndex: number) => {
+    setRejectedHunks((prev) => new Set([...prev, hunkIndex]));
+    setAcceptedHunks((prev) => {
+      const next = new Set(prev);
+      next.delete(hunkIndex);
+      return next;
+    });
+  }, []);
+
+  const handleAcceptAllHunks = useCallback(() => {
+    if (!diff?.diff?.unified) return;
+    // We need to parse the diff to get hunk count
+    const lines = diff.diff.unified.split("\n");
+    const hunkCount = lines.filter((l: string) => l.startsWith("@@")).length;
+    setAcceptedHunks(new Set(Array.from({ length: hunkCount }, (_, i) => i)));
+    setRejectedHunks(new Set());
+  }, [diff]);
+
+  const handleRejectAllHunks = useCallback(() => {
+    if (!diff?.diff?.unified) return;
+    const lines = diff.diff.unified.split("\n");
+    const hunkCount = lines.filter((l: string) => l.startsWith("@@")).length;
+    setRejectedHunks(new Set(Array.from({ length: hunkCount }, (_, i) => i)));
+    setAcceptedHunks(new Set());
+  }, [diff]);
+
+  const handleApplySelected = useCallback(async () => {
+    if (!sessionId || acceptedHunks.size === 0) return;
+    try {
+      await api.applyPartialDiff(
+        sessionId,
+        Array.from(acceptedHunks),
+        Array.from(rejectedHunks)
+      );
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", content: `Applied ${acceptedHunks.size} hunk(s)` },
+      ]);
+      setDiff(null);
+      setAcceptedHunks(new Set());
+      setRejectedHunks(new Set());
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "system", content: `Failed to apply: ${error instanceof Error ? error.message : "Unknown error"}` },
+      ]);
+    }
+  }, [sessionId, api, acceptedHunks, rejectedHunks]);
 
   // Checkpoint handlers
   const createCheckpoint = useCallback(async () => {
@@ -221,6 +289,8 @@ export default function App() {
 
   const restoreCheckpoint = useCallback((checkpoint: Checkpoint) => {
     setDiff(checkpoint.diffSnapshot);
+    setAcceptedHunks(new Set());
+    setRejectedHunks(new Set());
     setMessages((prev) => [...prev, { role: "system", content: `Restored checkpoint: ${checkpoint.label}` }]);
   }, []);
 
@@ -277,10 +347,15 @@ export default function App() {
           onTabChange={setSideTab}
           diff={
             <>
-              <DiffPanel
+              <InlineDiffPanel
                 diff={diff}
-                onAccept={() => sessionId && api.acceptDiff(sessionId).then(() => setDiff(null))}
-                onReject={() => sessionId && api.rejectDiff(sessionId).then(() => setDiff(null))}
+                onAcceptHunk={handleAcceptHunk}
+                onRejectHunk={handleRejectHunk}
+                onAcceptAll={handleAcceptAllHunks}
+                onRejectAll={handleRejectAllHunks}
+                onApplySelected={handleApplySelected}
+                acceptedHunks={acceptedHunks}
+                rejectedHunks={rejectedHunks}
               />
               <CheckpointManager
                 sessionId={sessionId}

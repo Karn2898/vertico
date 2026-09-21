@@ -109,6 +109,27 @@ export class ApiClient {
     if (!res.ok) throw new Error(`rejectDiff failed: ${res.statusText}`);
   }
 
+  async applyPartialDiff(
+    sessionId: string,
+    acceptedHunkIndices: number[],
+    rejectedHunkIndices: number[]
+  ): Promise<{ applied: boolean; message: string }> {
+    const patchId = await this.ensurePatchSession(sessionId);
+    const res = await fetch(`${this.baseUrl}/patches/${patchId}/apply-partial`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accepted_hunks: acceptedHunkIndices,
+        rejected_hunks: rejectedHunkIndices,
+      }),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(`applyPartialDiff failed: ${error.detail || res.statusText}`);
+    }
+    return await res.json();
+  }
+
   async preparePatch(sessionId: string, useGitStash = false): Promise<PatchSession> {
     const res = await fetch(`${this.baseUrl}/patches/from-session/${sessionId}`, {
       method: "POST",
