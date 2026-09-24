@@ -1,0 +1,4 @@
+INFO:     127.0.0.1:60801 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60835 - "POST /sessions HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:61034 - "POST /sessions/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61035 - "POST /chat/message HTTP/1.1" 200 OK

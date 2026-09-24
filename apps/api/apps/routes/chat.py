@@ -117,10 +117,13 @@ async def send_message(req: SendMessageRequest):
         return StreamingResponse(
             _stream_agent(req.session_id, req.message),
             media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     return StreamingResponse(
-        _stream_chat(req.session_id, req.message), media_type="text/event-stream"
+        _stream_chat(req.session_id, req.message),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 @router.get("/{session_id}/history", response_model=ChatHistoryResponse)
@@ -171,6 +174,8 @@ async def _stream_agent(session_id: str, user_message: str):
 
     Each node (reviewer, refactorer, linter) emits an SSE event.
     """
+    # immediate heartbeat so the UI shows the thinking animation right away
+    yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
 
     session = sessions[session_id]
     sessions[session_id]["status"] = "running"
@@ -205,12 +210,103 @@ async def _stream_agent(session_id: str, user_message: str):
         error_event = {"node": "error", "content": str(e)}
         yield f"data: {json.dumps(error_event)}\n\n"
 
+def _strip_tool_syntax(text: str) -> str:
+    """Remove pseudo-XML tool call blocks from displayed text (the "leash")."""
+    return re.sub(r"<function=[\w_]+>.*?</function>", "", text, flags=re.DOTALL)
+
+
+async def _stream_llm_round(llm, messages):
+    """Stream one LLM round token-by-token (an async generator).
+
+    Yields dicts: {'type': 'content', 'text': str} while tokens arrive, then a
+    final {'type': 'done', ...} carrying 'visible_text', 'tool_calls' and
+    'assistant_message' (an AIMessage suitable for appending to pending_messages).
+    """
+    content_parts: list = []
+    tool_call_chunks: list = []
+    sent = 0  # how many chars of the cleaned text we already streamed
+
+    async for chunk in llm.astream(messages):
+        if getattr(chunk, "tool_call_chunks", None):
+            tool_call_chunks.extend(chunk.tool_call_chunks)
+        piece = getattr(chunk, "content", "")
+        if isinstance(piece, list):
+            piece = "".join(
+                item.get("text", "") if isinstance(item, dict) else str(item)
+                for item in piece
+            )
+        if not piece or not isinstance(piece, str):
+            continue
+        content_parts.append(piece)
+        full = "".join(content_parts)
+        # find where we can safely stream up to: cut at the earliest start of a
+        # (possibly partial) pseudo-XML tool block so the leash holds it back
+        safe_end = len(full)
+        for marker in ("<function=", "<parameter="):
+            idx = full.find(marker, sent)
+            if idx != -1:
+                safe_end = min(safe_end, idx)
+        cleaned = _strip_tool_syntax(full[sent:safe_end])
+        if cleaned:
+            yield {"type": "content", "text": cleaned}
+        sent = safe_end
+
+    full_text = "".join(content_parts)
+    # stream anything withheld after we know there is no tool block / strip it
+    tail = _strip_tool_syntax(full_text[sent:])
+    if tail:
+        yield {"type": "content", "text": tail}
+        sent = len(full_text)
+
+    visible_text = _strip_tool_syntax(full_text)
+
+    # merge tool_call_chunks into complete tool calls
+    merged: dict[int, dict] = {}
+    for tc in tool_call_chunks:
+        idx = getattr(tc, "index", None) or len(merged)
+        slot = merged.setdefault(idx, {"id": "", "name": "", "args": ""})
+        slot["id"] += getattr(tc, "id", "") or ""
+        slot["name"] += getattr(tc, "name", "") or ""
+        slot["args"] += getattr(tc, "args", "") or ""
+    tool_calls = []
+    for i, (_, slot) in enumerate(sorted(merged.items())):
+        raw_args = slot["args"] or "{}"
+        try:
+            parsed = json.loads(raw_args) if raw_args.strip() else {}
+        except Exception:
+            parsed = {}
+        tool_calls.append({
+            "id": slot["id"] or f"stream-call-{i+1}",
+            "name": slot["name"],
+            "args": parsed,
+        })
+
+    # fallback: pseudo-XML tool calls hidden inside the raw text
+    if not tool_calls:
+        tool_calls = _extract_text_tool_calls(full_text)
+
+    from langchain_core.messages import AIMessage
+    if tool_calls:
+        assistant_message = AIMessage(content=visible_text, tool_calls=tool_calls)
+    else:
+        assistant_message = AIMessage(content=visible_text)
+    yield {
+        "type": "done",
+        "visible_text": visible_text,
+        "tool_calls": tool_calls,
+        "assistant_message": assistant_message,
+    }
+
+
 async def _stream_chat(session_id: str, user_message: str):
     """Conversational path — no graph, just the LLM with history as context.
 
     Used for questions like "why did you change x?" or "what are the errors?"
+    Streams true token-by-token output via llm.astream.
     """
 
+    # immediate heartbeat so the UI shows the thinking animation right away
+    yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
     max_tool_rounds = 4
 
     session = sessions[session_id]
@@ -246,37 +342,31 @@ Answer questions about the code, the refactoring process, or errors concisely.
 
     answered = False
     try:
-        for round_index in range(max_tool_rounds):
-            response = await llm.ainvoke(pending_messages)
-            tool_calls = getattr(response, "tool_calls", []) or []
-            token = getattr(response, "content", str(response))
-            if isinstance(token, list):
-                token = "".join(
-                    item.get("text", "") if isinstance(item, dict) else str(item)
-                    for item in token
-                )
-
-            if not tool_calls and isinstance(token, str):
-                tool_calls = _extract_text_tool_calls(token)
+        for _round in range(max_tool_rounds):
+            # Stream this LLM round token-by-token; collect tool calls at the end.
+            assistant_message = None
+            tool_calls = []
+            async for event in _stream_llm_round(llm, pending_messages):
+                if event["type"] == "content":
+                    full_response += event["text"]
+                    yield f"data: {json.dumps({'content': event['text']})}\n\n"
+                elif event["type"] == "done":
+                    tool_calls = event["tool_calls"]
+                    assistant_message = event["assistant_message"]
 
             if not tool_calls:
-                full_response += token
-                yield f"data: {json.dumps({'content': token})}\n\n"
                 answered = True
                 break
 
-            logging.debug(
-                "chat round %d: tool calls %s",
-                round_index + 1,
-                [c.get("name") for c in tool_calls],
-            )
+            pending_messages.append(assistant_message)
 
-            pending_messages = [*pending_messages, response]
             for call in tool_calls:
                 tool = tool_map.get(call["name"])
                 if tool is None:
                     result = f"Unknown tool: {call['name']}"
                 else:
+                    # resume the thinking animation while the tool runs
+                    yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
                     root_token = None
                     try:
                         workspace_root = session.get("workspace_root")
@@ -297,6 +387,8 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 )
 
         if not answered:
+            # Out of tool rounds — force a final, tool-free answer based on
+            # everything gathered so far.
             clean_messages = []
             for msg in pending_messages:
                 if isinstance(msg, dict):
@@ -313,20 +405,20 @@ Answer questions about the code, the refactoring process, or errors concisely.
             })
 
             bare_llm = _get_llm(session)
+            produced = False
             try:
-                response = await bare_llm.ainvoke(clean_messages)
-                token = getattr(response, "content", str(response))
-                if isinstance(token, list):
-                    token = "".join(
-                        item.get("text", "") if isinstance(item, dict) else str(item)
-                        for item in token
-                    )
+                async for event in _stream_llm_round(bare_llm, clean_messages):
+                    if event["type"] == "content":
+                        full_response += event["text"]
+                        produced = True
+                        yield f"data: {json.dumps({'content': event['text']})}\n\n"
             except Exception as exc:
                 logging.warning("final wrap-up LLM call failed: %s", exc)
-                token = "(I gathered the requested information but encountered an issue composing the final response.)"
 
-            full_response = token
-            yield f"data: {json.dumps({'content': token})}\n\n"
+            if not produced and not full_response:
+                token = "(I gathered the requested information but encountered an issue composing the final response.)"
+                full_response = token
+                yield f"data: {json.dumps({'content': token})}\n\n"
     except Exception as e:
         logging.exception("chat stream failed for session %s", session_id)
         yield f"data: {json.dumps({'node': 'error', 'content': f'Stream error: {e}'})}\n\n"

@@ -1,4 +1,4 @@
-/* vertico design system — warm ink */
+/* vertico design system — warm ink × cyberpunk layer */
 :root {
   --bg: #14100f;
   --surface: #211a18;
@@ -20,6 +20,37 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* === CYBERPUNK: full-viewport scanline mesh + vignette === */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(20, 16, 15, 0) 0px,
+      rgba(20, 16, 15, 0) 2px,
+      rgba(20, 16, 15, 0.22) 3px,
+      rgba(20, 16, 15, 0) 4px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    transparent 55%,
+    rgba(10, 8, 7, 0.5) 100%
+  );
 }
 .bg-background { background: var(--bg); }
 .text-foreground { color: var(--fg); }
@@ -1226,3 +1257,854 @@ input::placeholder { color: var(--dim); }
 }
 
 
+
+/* ============================================================
+   CYBERPUNK LAYER — "neon warm ink"
+   Same palette (wine #6e2a3a, gold #b8935a), more voltage.
+   Angular clipped corners, neon glow, glitch type, scan sweeps.
+   ============================================================ */
+
+/* --- angular clipped bubbles: sharp notched corners --- */
+.bubble-user,
+.bubble-assistant,
+.bubble-system,
+.thinking {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    0 0, calc(100% - 10px) 0, 100% 10px,
+    100% 100%, 10px 100%, 0 calc(100% - 10px)
+  );
+  transition: filter 0.2s ease;
+}
+
+.bubble-user {
+  box-shadow: inset 0 0 24px rgba(110, 42, 58, 0.45);
+}
+.bubble-user:hover {
+  filter: drop-shadow(0 0 6px rgba(110, 42, 58, 0.65))
+          drop-shadow(0 0 14px rgba(110, 42, 58, 0.35));
+}
+
+.bubble-assistant {
+  box-shadow: inset 2px 0 0 var(--gold), inset 0 0 24px rgba(184, 147, 90, 0.12);
+  filter: drop-shadow(0 0 1px rgba(184, 147, 90, 0.4));
+}
+.bubble-assistant:hover {
+  filter: drop-shadow(0 0 5px rgba(184, 147, 90, 0.55))
+          drop-shadow(0 0 16px rgba(184, 147, 90, 0.25));
+}
+
+.bubble-system {
+  box-shadow: inset 0 0 18px rgba(110, 42, 58, 0.3);
+}
+
+/* --- thinking state: neon scan sweep behind the dots --- */
+.thinking {
+  animation: thinking-flicker 6s steps(1) infinite;
+}
+.thinking::before {
+  background: radial-gradient(
+    circle at 40% 50%,
+    var(--gold-glow),
+    rgba(110, 42, 58, 0.4) 45%,
+    transparent 70%
+  ) !important;
+  animation: vertico-breathe 2.4s ease-in-out infinite,
+             thinking-scan 3.2s linear infinite !important;
+}
+@keyframes thinking-flicker {
+  0%, 93%, 95%, 100% { opacity: 1; }
+  94% { opacity: 0.75; }
+}
+@keyframes thinking-scan {
+  0%   { transform: translateY(-30%); }
+  100% { transform: translateY(130%); }
+}
+
+/* --- neon type accents --- */
+.agent-label,
+.checkpoint-title,
+.agent-node-badge,
+.side-panel-tab {
+  text-shadow: 0 0 6px var(--gold-glow);
+}
+.agent-label {
+  letter-spacing: 0.14em;
+}
+.agent-label::before {
+  content: "// ";
+  color: var(--wine-hover);
+  letter-spacing: 0;
+}
+
+/* glitch flicker on the agent label */
+.agent-label {
+  position: relative;
+  animation: label-glitch 7s steps(1) infinite;
+}
+@keyframes label-glitch {
+  0%, 91%, 93%, 100% { transform: translateX(0); opacity: 0.7; }
+  92% { transform: translateX(1px) skewX(-4deg); opacity: 1; }
+}
+
+/* --- agent avatar: pulsing wine node ring --- */
+.agent-avatar {
+  opacity: 1 !important;
+  position: relative;
+  color: var(--gold) !important;
+  text-shadow: 0 0 8px var(--gold-glow);
+}
+.agent-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(110, 42, 58, 0.6);
+  border-radius: 2px;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+  animation: node-ring 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes node-ring {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.06); }
+}
+
+/* --- streaming cursor: neon bar with wine afterglow --- */
+.agent-streaming-cursor {
+  box-shadow: 0 0 4px var(--gold), 0 0 10px var(--gold-glow);
+  height: 1.1em;
+}
+
+/* --- code chips: dark terminal blocks with gold edge --- */
+.code-chip,
+.agent-inline-code,
+.markdown code:not(pre code) {
+  background: rgba(10, 8, 7, 0.75) !important;
+  border: 1px solid rgba(184, 147, 90, 0.25);
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
+  color: #e8cfb5;
+  text-shadow: 0 0 4px rgba(232, 207, 181, 0.25);
+}
+
+/* code blocks: terminal window with header scan strip */
+.agent-code-block {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  box-shadow: inset 0 0 0 1px rgba(184, 147, 90, 0.2);
+}
+.agent-code-block pre {
+  background: rgba(10, 8, 7, 0.8);
+  text-shadow: 0 0 3px rgba(126, 231, 135, 0.15);
+}
+.agent-code-header {
+  padding: 4px 8px;
+  background: rgba(110, 42, 58, 0.18);
+  border-bottom: 1px solid rgba(184, 147, 90, 0.2);
+}
+
+/* syntax tokens: slight neon bloom */
+.token-keyword, .markdown pre code.token-keyword { text-shadow: 0 0 5px rgba(126, 231, 135, 0.4); }
+.token-string, .markdown pre .token-string { text-shadow: 0 0 5px rgba(165, 214, 255, 0.35); }
+.token-number, .markdown pre .token-number { text-shadow: 0 0 5px rgba(121, 192, 255, 0.35); }
+
+/* --- input: focused neon terminal field --- */
+input {
+  border-radius: 0 !important;
+  background: rgba(10, 8, 7, 0.7);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold-glow), 0 0 14px var(--gold-glow);
+}
+
+/* --- focus rings: sharper neon --- */
+*:focus-visible {
+  box-shadow: 0 0 0 1px var(--gold), 0 0 10px var(--gold-glow) !important;
+}
+
+/* --- side panel: holo-plate frame --- */
+.side-panel {
+  background: rgba(20, 16, 15, 0.9) !important;
+  border: 1px solid rgba(184, 147, 90, 0.3) !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.7),
+              -1px 0 12px rgba(184, 147, 90, 0.18),
+              inset 0 0 40px rgba(110, 42, 58, 0.12) !important;
+}
+.side-panel-tab.active::after {
+  background: var(--gold);
+  box-shadow: 0 0 6px var(--gold), 0 0 14px var(--gold-glow);
+}
+.side-panel-row:hover,
+.side-panel-row.active {
+  border-left-color: var(--gold) !important;
+  box-shadow: inset 0 0 18px rgba(184, 147, 90, 0.08);
+}
+.side-panel-backdrop {
+  background: rgba(10, 8, 7, 0.55) !important;
+  backdrop-filter: blur(8px) saturate(0.85) !important;
+}
+
+/* --- quickpick: neon command deck --- */
+.quickpick-modal {
+  background: rgba(20, 16, 15, 0.96) !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7),
+              0 0 0 1px rgba(184, 147, 90, 0.35),
+              0 0 24px rgba(184, 147, 90, 0.15) !important;
+}
+.quickpick-item:hover,
+.quickpick-item.active {
+  background: rgba(110, 42, 58, 0.4) !important;
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+.quickpick-item-meta {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
+}
+
+/* --- context chips: data-tokens --- */
+.context-chip {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%);
+  padding-right: 12px;
+  border-color: rgba(184, 147, 90, 0.2);
+  background: rgba(42, 34, 32, 0.85);
+}
+.context-chip:hover {
+  box-shadow: 0 0 0 1px var(--wine-hover), 0 0 10px rgba(110, 42, 58, 0.5);
+}
+.context-chip-add {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 0 100%);
+}
+
+/* --- context chips bar: subtle circuit grid --- */
+.context-chips-container {
+  background:
+    linear-gradient(rgba(184, 147, 90, 0.04) 1px, transparent 1px) 0 0 / 100% 14px,
+    linear-gradient(90deg, rgba(184, 147, 90, 0.04) 1px, transparent 1px) 0 0 / 14px 100%,
+    var(--surface);
+}
+
+/* --- checkpoints: glow nodes --- */
+.checkpoint-item:hover {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px rgba(184, 147, 90, 0.3), 0 0 12px rgba(184, 147, 90, 0.2) !important;
+}
+.checkpoint-label {
+  letter-spacing: 0.02em;
+}
+.checkpoint-meta {
+  text-shadow: 0 0 4px rgba(184, 147, 90, 0.2);
+}
+
+/* --- diff hunks: wine/gold decision glow --- */
+.diff-hunk {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+.diff-hunk.accepted {
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 0 14px rgba(16, 185, 129, 0.18) !important;
+}
+.diff-hunk.rejected {
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.2), 0 0 14px rgba(244, 63, 94, 0.15) !important;
+}
+.diff-line {
+  text-shadow: 0 0 2px rgba(241, 228, 217, 0.12);
+}
+
+/* --- links: neon underline --- */
+.markdown a,
+.agent-link {
+  text-decoration-color: var(--wine-hover);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-shadow: 0 0 6px var(--gold-glow);
+}
+
+/* --- hamburger: corner-bracket button --- */
+.hamburger-btn-fixed {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+  border: 1px solid transparent;
+}
+.hamburger-btn-fixed:hover {
+  border-color: rgba(184, 147, 90, 0.4);
+  color: var(--gold) !important;
+  text-shadow: 0 0 8px var(--gold-glow);
+  background: rgba(184, 147, 90, 0.06) !important;
+}
+
+/* --- ambient circuit shimmer: occasional gold scanline over the app --- */
+@keyframes app-scan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* respect reduced motion: kill all cyberpunk animation but keep the static look */
+@media (prefers-reduced-motion: reduce) {
+  .agent-label, .thinking, .thinking::before, .agent-avatar::after {
+    animation: none !important;
+  }
+  body::before { opacity: 0.25; }
+}
+
+/* ============================================================
+   CYBERPUNK ENHANCEMENTS — creative layer on top of warm-ink
+   ============================================================ */
+
+/* --- ambient grid overlay (subtle, behind everything) --- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(184, 147, 90, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184, 147, 90, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+  animation: grid-drift 60s linear infinite;
+}
+@keyframes grid-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 64px 64px; }
+}
+
+/* --- scanline CRT feel (very subtle) --- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.04) 2px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+}
+
+/* --- corner bracket utility --- */
+.cyber-corner {
+  position: relative;
+}
+.cyber-corner::before,
+.cyber-corner::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--gold);
+  opacity: 0.5;
+  transition: opacity 0.3s ease, border-color 0.3s ease;
+  pointer-events: none;
+}
+.cyber-corner::before {
+  top: -1px; left: -1px;
+  border-right: none; border-bottom: none;
+  border-radius: 2px 0 0 0;
+}
+.cyber-corner::after {
+  bottom: -1px; right: -1px;
+  border-left: none; border-top: none;
+  border-radius: 0 0 2px 0;
+}
+.cyber-corner:hover::before,
+.cyber-corner:hover::after {
+  opacity: 1;
+  border-color: var(--gold);
+  box-shadow:
+    0 0 8px var(--gold-glow),
+    inset 0 0 8px var(--gold-glow);
+}
+
+/* corner brackets on side panel */
+.side-panel {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px),
+    calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.25) !important;
+  border-right: none;
+  box-shadow:
+    -24px 0 60px rgba(0, 0, 0, 0.6),
+    inset 0 0 1px rgba(184, 147, 90, 0.1);
+}
+.side-panel-header {
+  border-bottom: 1px solid rgba(184, 147, 90, 0.15) !important;
+}
+.side-panel-footer {
+  border-top: 1px solid rgba(184, 147, 90, 0.15) !important;
+}
+
+/* corner brackets on quickpick modal */
+.quickpick-modal {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px),
+    calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.35) !important;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(184, 147, 90, 0.15),
+    inset 0 0 40px rgba(184, 147, 90, 0.02);
+}
+
+/* corner brackets on code blocks */
+.agent-code-block,
+.diff-hunk {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.2) !important;
+}
+
+/* --- neon glow on focus/active --- */
+*:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 16px var(--gold-glow),
+    0 0 32px rgba(184, 147, 90, 0.15);
+}
+
+/* inputs: terminal feel */
+input,
+textarea {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px),
+    calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.25) !important;
+  background: rgba(20, 16, 15, 0.8) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--gold) !important;
+  box-shadow:
+    0 0 0 1px var(--gold),
+    0 0 12px var(--gold-glow),
+    inset 0 0 12px rgba(184, 147, 90, 0.06);
+  background: rgba(20, 16, 15, 0.95) !important;
+}
+input::placeholder {
+  color: var(--dim);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+
+/* buttons: terminal/hex style */
+button:not(.hamburger-btn-fixed):not(.side-panel-close-btn):not(.side-panel-tab):not(.quickpick-item):not(.agent-action-btn):not(.checkpoint-restore-btn):not(.checkpoint-create-btn):not(.hunk-action-btn) {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px),
+    calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px
+  );
+  border: 1px solid currentColor;
+  position: relative;
+  overflow: hidden;
+}
+button:not(.hamburger-btn-fixed):not(.side-panel-close-btn):not(.side-panel-tab):not(.quickpick-item):not(.agent-action-btn):not(.checkpoint-restore-btn):not(.checkpoint-create-btn):not(.hunk-action-btn)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+button:not(.hamburger-btn-fixed):not(.side-panel-close-btn):not(.side-panel-tab):not(.quickpick-item):not(.agent-action-btn):not(.checkpoint-restore-btn):not(.checkpoint-create-btn):not(.hunk-action-btn):hover::before {
+  transform: translateX(100%);
+}
+
+/* --- chat bubbles: terminal feel --- */
+.bubble-user {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 2px),
+    calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.2);
+  background: linear-gradient(135deg, var(--wine), var(--wine-deep)) !important;
+  box-shadow:
+    4px 4px 0 rgba(110, 42, 58, 0.3),
+    inset 0 0 1px rgba(184, 147, 90, 0.1);
+}
+.bubble-user:hover {
+  border-color: var(--gold);
+  box-shadow:
+    4px 4px 0 rgba(110, 42, 58, 0.4),
+    0 0 16px rgba(184, 147, 90, 0.2),
+    inset 0 0 1px rgba(184, 147, 90, 0.15);
+}
+
+.bubble-system {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px
+  );
+  border: 1px dashed rgba(184, 147, 90, 0.3) !important;
+}
+
+/* --- agent message: terminal prefix --- */
+.agent-message {
+  position: relative;
+}
+.agent-message::before {
+  content: ">_";
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.65rem;
+  color: var(--gold);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: cursor-blink 1.5s ease-in-out infinite;
+}
+@keyframes cursor-blink {
+  0%, 50% { opacity: 0.6; }
+  51%, 100% { opacity: 0; }
+}
+
+/* agent avatar glitch on hover */
+.agent-avatar {
+  position: relative;
+}
+.agent-avatar::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 1px solid var(--gold);
+  opacity: 0;
+  animation: avatar-pulse 3s ease-in-out infinite;
+  border-radius: 2px;
+}
+@keyframes avatar-pulse {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.1); }
+}
+.agent-message:hover .agent-avatar::after {
+  animation: avatar-glitch 0.8s ease-in-out infinite;
+}
+@keyframes avatar-glitch {
+  0% { clip-path: inset(0 0 0 0); opacity: 0.4; }
+  10% { clip-path: inset(2px 0 8px 0); opacity: 0.6; }
+  20% { clip-path: inset(8px 0 2px 0); opacity: 0.4; }
+  30% { clip-path: inset(0 0 0 0); opacity: 0.6; }
+  100% { clip-path: inset(0 0 0 0); opacity: 0.4; }
+}
+
+/* --- code block: terminal header with fake window controls --- */
+.agent-code-header {
+  position: relative;
+  padding-left: 36px !important;
+}
+.agent-code-header::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow:
+    14px 0 0 #ffbd2e,
+    28px 0 0 #27c93f;
+  opacity: 0.8;
+}
+
+/* --- diff hunk: hex address style header --- */
+.diff-hunk-header {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  background: linear-gradient(90deg, rgba(184, 147, 90, 0.08), transparent) !important;
+  border-left: 2px solid var(--gold);
+  position: relative;
+}
+.diff-hunk-header::before {
+  content: "0x" attr(data-addr);
+  position: absolute;
+  left: 8px;
+  font-size: 0.65rem;
+  color: var(--gold);
+  opacity: 0.5;
+  font-family: ui-monospace, monospace;
+}
+
+/* --- context chips: data tags --- */
+.context-chip {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px),
+    calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px
+  );
+  border: 1px solid rgba(184, 147, 90, 0.3);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.context-chip::before {
+  content: "[";
+  margin-right: 2px;
+  opacity: 0.5;
+}
+.context-chip::after {
+  content: "]";
+  margin-left: 2px;
+  opacity: 0.5;
+}
+
+/* --- checkpoint items: log entries --- */
+.checkpoint-item {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px),
+    calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px
+  );
+  border-left: 2px solid var(--gold);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  position: relative;
+}
+.checkpoint-item::before {
+  content: "[LOG]";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.55rem;
+  color: var(--gold);
+  opacity: 0.5;
+}
+.checkpoint-item:hover {
+  background: rgba(184, 147, 90, 0.05) !important;
+  border-left-color: var(--gold);
+  box-shadow: 0 0 12px rgba(184, 147, 90, 0.15);
+}
+
+/* --- action buttons: terminal keys --- */
+.agent-action-btn,
+.hunk-action-btn,
+.checkpoint-restore-btn,
+.checkpoint-create-btn {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px),
+    calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px
+  );
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor !important;
+  position: relative;
+}
+.agent-action-btn::before,
+.hunk-action-btn::before {
+  content: "F" attr(data-key);
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.55rem;
+  opacity: 0.3;
+  color: currentColor;
+}
+
+/* --- scrollbar: thin neon --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold), var(--wine));
+  border-radius: 0;
+  border: 1px solid rgba(184, 147, 90, 0.2);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* --- selection: gold highlight --- */
+::selection {
+  background: rgba(184, 147, 90, 0.3);
+  color: var(--fg);
+}
+
+/* --- glitch text utility (apply to .glitch class) --- */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+  clip: rect(0, 9999px, 0, 0);
+  animation: glitch-anim 3s infinite linear alternate-reverse;
+}
+.glitch::before {
+  color: #ff5f56;
+  animation-delay: 0.1s;
+  z-index: -1;
+}
+.glitch::after {
+  color: #27c93f;
+  animation-delay: 0.2s;
+  z-index: -2;
+}
+@keyframes glitch-anim {
+  0% { clip: rect(10px, 9999px, 20px, 0); transform: translate(-1px, 1px); }
+  10% { clip: rect(5px, 9999px, 30px, 0); transform: translate(1px, -1px); }
+  20% { clip: rect(15px, 9999px, 5px, 0); transform: translate(-1px, 0); }
+  30% { clip: rect(0px, 9999px, 15px, 0); transform: translate(1px, 1px); }
+  40% { clip: rect(20px, 9999px, 10px, 0); transform: translate(0, -1px); }
+  50% { clip: rect(5px, 9999px, 25px, 0); transform: translate(-1px, 1px); }
+  60% { clip: rect(25px, 9999px, 35px, 0); transform: translate(1px, 0); }
+  70% { clip: rect(10px, 9999px, 20px, 0); transform: translate(0, 1px); }
+  80% { clip: rect(30px, 9999px, 40px, 0); transform: translate(-1px, -1px); }
+  90% { clip: rect(0px, 9999px, 10px, 0); transform: translate(1px, 1px); }
+  100% { clip: rect(15px, 9999px, 30px, 0); transform: translate(-1px, 0); }
+}
+
+/* --- terminal typing effect for new agent messages --- */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+.typing {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--gold);
+  animation:
+    typewriter 1s steps(40, end) forwards,
+    cursor-blink 0.75s step-end infinite;
+}
+
+/* --- data prefix for code lines --- */
+.diff-line::before {
+  content: "│ ";
+  color: var(--border);
+  margin-right: 4px;
+  opacity: 0.5;
+}
+.diff-line.add::before { content: "┃+ "; color: #10b981; }
+.diff-line.remove::before { content: "┃- "; color: #f43f5e; }
+
+/* --- header wordmark: glitch on hover --- */
+header .font-bold {
+  position: relative;
+  letter-spacing: 0.15em;
+}
+header .font-bold:hover {
+  animation: wordmark-glitch 0.6s ease-in-out;
+}
+@keyframes wordmark-glitch {
+  0% { transform: translate(0); text-shadow: 0 0 0 transparent; }
+  20% { transform: translate(-1px, 1px); text-shadow: 2px -2px 0 #ff5f56, -2px 2px 0 #27c93f; }
+  40% { transform: translate(1px, -1px); text-shadow: -2px 2px 0 #ff5f56, 2px -2px 0 #27c93f; }
+  60% { transform: translate(-1px, 0); text-shadow: 2px 0 0 #ff5f56, -2px 0 0 #27c93f; }
+  80% { transform: translate(1px, 0); text-shadow: -2px 0 0 #ff5f56, 2px 0 0 #27c93f; }
+  100% { transform: translate(0); text-shadow: 0 0 0 transparent; }
+}
+
+/* --- status dots: pulsing rings --- */
+.side-panel-footer .w-2.h-2 {
+  box-shadow: 0 0 0 0 var(--gold-glow);
+  animation: status-ring 2s ease-out infinite;
+}
+@keyframes status-ring {
+  0% { box-shadow: 0 0 0 0 var(--gold-glow); }
+  100% { box-shadow: 0 0 0 12px transparent; }
+}
+
+/* --- quickpick items: terminal menu --- */
+.quickpick-item {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px),
+    calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px
+  );
+  border-left: 2px solid transparent;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.quickpick-item:hover,
+.quickpick-item.active {
+  border-left-color: var(--gold) !important;
+  background: rgba(184, 147, 90, 0.08) !important;
+  transform: translateX(4px);
+}
+
+/* --- session/diff rows: terminal list --- */
+.side-panel-row {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px),
+    calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px
+  );
+  border-left: 2px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.side-panel-row:hover,
+.side-panel-row.active {
+  border-left-color: var(--gold) !important;
+  background: rgba(184, 147, 90, 0.06) !important;
+  transform: translateX(3px);
+}
+
+/* --- floating particles (subtle gold dust) --- */
+@keyframes float-up {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.2; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* --- respect reduced motion for all cyberpunk animations --- */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after,
+  .agent-avatar::after,
+  .agent-message::before,
+  .thinking::before,
+  .thinking-dots span,
+  .agent-thinking-dots span,
+  .agent-streaming-cursor,
+  .message-row,
+  .agent-message,
+  .quickpick-item,
+  .side-panel-row,
+  .checkpoint-item,
+  ::-webkit-scrollbar-thumb {
+    animation: none !important;
+    transition: none !important;
+  }
+  body::before { opacity: 0.15; }
+  body::after { opacity: 0.1; }
+  .agent-message::before { opacity: 0.4; }
+}

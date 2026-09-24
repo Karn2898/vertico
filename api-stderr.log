@@ -1,0 +1,14 @@
+2026-09-23 02:18:31,595 | WARNING | sandbox.executors.python_executor | Running code WITHOUT sandbox — dev mode only
+INFO:     Started server process [8264]
+INFO:     Waiting for application startup.
+2026-09-23 02:18:37,685 | INFO | vertico-api | Starting up...
+2026-09-23 02:18:37,701 | INFO | vertico-api | agent graph compiled OK
+2026-09-23 02:18:42,537 | INFO | vertico-api | pgvector enabled ok
+2026-09-23 02:18:43,668 | INFO | vertico-api | DB tables created
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2026-09-23 02:20:59,840 | INFO | vertico-api | GET /health 200(4.0ms)
+2026-09-23 02:21:20,288 | INFO | vertico-api | POST /sessions 307(0.99ms)
+2026-09-23 02:22:39,333 | INFO | vertico-api | POST /sessions/ 200(270.99ms)
+2026-09-23 02:22:39,440 | INFO | vertico-api | POST /chat/message 200(59.0ms)
+2026-09-23 02:23:01,397 | INFO | httpx2 | HTTP Request: POST https://integrate.api.nvidia.com/v1/chat/completions "HTTP/1.1 200 OK"

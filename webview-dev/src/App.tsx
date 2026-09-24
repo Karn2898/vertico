@@ -126,6 +126,15 @@ export default function App() {
     cancelRef.current = api.streamChat(sid, text, {
       onMessage: (data) => {
         const content = data.content ?? "";
+        // thinking heartbeat: start the animation, append nothing
+        if (data.node === "thinking" && !content) {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant" && last?.streaming) return prev;
+            return [...prev, { role: "assistant", content: "", streaming: true }];
+          });
+          return;
+        }
         if (data.node && data.node !== "done") {
           acc += (acc ? "\n" : "") + `**${data.node}**\n${content}`;
         } else {
