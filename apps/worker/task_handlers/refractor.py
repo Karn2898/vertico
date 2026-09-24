@@ -19,6 +19,13 @@ def handle_refactor(session_id: str):
             "errors":session.errors,
             "iterations":session.iterations,
         }
+        
+        # If original_code looks like a placeholder, use the latest user message from chat history
+        # (This is a fallback - the chat endpoint should update this properly)
+        placeholder_indicators = ["paste code", "untitled", "refactor"]
+        if any(ind in initial_state["original_code"].lower() for ind in placeholder_indicators):
+            # Try to get the latest user message from chat history
+            pass  # TODO: fetch from chat history if needed
 
         repo.update_status(session_id, "running")
 

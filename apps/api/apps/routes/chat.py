@@ -77,6 +77,7 @@ class ChatMessage(BaseModel):
 class SendMessageRequest(BaseModel):
     session_id: str
     message: str
+    context_files: Optional[list[str]] = None
 
 class ChatHistoryResponse(BaseModel):
     session_id: str
@@ -115,7 +116,7 @@ async def send_message(req: SendMessageRequest):
 
     if _is_task(req.message):
         return StreamingResponse(
-            _stream_agent(req.session_id, req.message),
+            _stream_agent(req.session_id, req.message, req.context_files),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
@@ -169,7 +170,7 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
     yield f"data: {json.dumps(event)}\n\n"
 
 
-async def _stream_agent(session_id: str, user_message: str):
+async def _stream_agent(session_id: str, user_message: str, context_files: Optional[list[str]] = None):
     """Compile and stream the refactor graph.
 
     Each node (reviewer, refactorer, linter) emits an SSE event.
@@ -185,8 +186,32 @@ async def _stream_agent(session_id: str, user_message: str):
         yield f"data: {json.dumps({'node': 'error', 'content': 'Agent workflow module is not available.'})}\n\n"
         return
 
-    app = graphs.workflow.compile()
+    # Update agent_state with the user's code as original_code
     agent_state = session["agent_state"]
+    agent_state["original_code"] = user_message
+    agent_state["refactored_code"] = user_message
+    agent_state["review_notes"] = ""
+    agent_state["errors"] = None
+    agent_state["iterations"] = 0
+    
+    # If context files provided, read them and add to candidate_files
+    if context_files:
+        from agent_core.workspace_tools import read_code_file
+        workspace_root = session.get("workspace_root")
+        candidate_files = {}
+        for f in context_files:
+            try:
+                result = read_code_file({"path": f, "repo_root": workspace_root})
+                if isinstance(result, dict) and "content" in result:
+                    candidate_files[f] = result["content"]
+                elif isinstance(result, str):
+                    candidate_files[f] = result
+            except Exception:
+                pass
+        if candidate_files:
+            agent_state["candidate_files"] = candidate_files
+
+    app = graphs.workflow.compile()
 
     try:
         stream = app.stream(agent_state)
