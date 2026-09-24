@@ -1,14 +1,16 @@
-import { useRef, useEffect } from "react";
-import { MessageBubble } from "./MessageBubble";
-import { AgentMessage } from "./AgentMessage";
+import { useRef, useEffect, useCallback } from "react";
+import { MessageBubble } from "@src/components/MessageBubble";
+import { AgentMessage } from "@src/components/AgentMessage";
 
 interface Props {
   messages: any[];
   streaming: boolean;
   onSend: (text: string) => void;
+  onRegenerate?: (messageIndex: number) => void;
+  onFeedback?: (messageIndex: number, feedback: "helpful" | "not_helpful") => void;
 }
 
-export function ChatWindow({ messages, streaming, onSend }: Props) {
+export function ChatWindow({ messages, streaming, onSend, onRegenerate, onFeedback }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,7 +49,7 @@ export function ChatWindow({ messages, streaming, onSend }: Props) {
               </div>
             );
           }
-          return <AgentMessage key={i} message={msg} index={i} messages={messages} streaming={streaming} />;
+          return <AgentMessage key={i} message={msg} index={i} messages={messages} streaming={streaming} onRegenerate={onRegenerate} onFeedback={onFeedback} />;
         })}
         <div ref={bottomRef} />
       </div>

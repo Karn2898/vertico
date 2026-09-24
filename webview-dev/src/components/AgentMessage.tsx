@@ -1,10 +1,12 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 
 interface AgentMessageProps {
   message: any;
   index: number;
   messages: any[];
   streaming: boolean;
+  onRegenerate?: (messageIndex: number) => void;
+  onFeedback?: (messageIndex: number, feedback: "helpful" | "not_helpful") => void;
 }
 
 const NODE_LABELS: Record<string, string> = {
@@ -203,13 +205,29 @@ function StreamingCursor({ isStreaming }: { isStreaming: boolean }) {
   );
 }
 
-export function AgentMessage({ message, index, messages, streaming }: AgentMessageProps) {
+export function AgentMessage({ message, index, messages, streaming, onRegenerate, onFeedback }: AgentMessageProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const [showActions, setShowActions] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const isSameTurn = isSameTurnAsPrevious(messages, index);
   const isThinking = message?.streaming && !message?.content?.trim();
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      // fallback
+    }
+  }, [content]);
+
+  const handleRegenerate = useCallback(() => {
+    onRegenerate?.(index);
+  }, [index, onRegenerate]);
+
+  const handleFeedback = useCallback((feedback: "helpful" | "not_helpful") => {
+    onFeedback?.(index, feedback);
+  }, [index, onFeedback]);
 
   useEffect(() => {
     // Entrance animation
@@ -296,20 +314,20 @@ export function AgentMessage({ message, index, messages, streaming }: AgentMessa
 
         {/* Hover-reveal action row */}
         <div ref={actionsRef} className="agent-actions">
-          <button className="agent-action-btn" title="Copy message" onClick={() => navigator.clipboard.writeText(content)}>
+          <button className="agent-action-btn" title="Copy message" onClick={handleCopy}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2H9C10.1046 2 11 2.89543 11 4V10C11 11.1046 10.1046 12 9 12H3C1.89543 12 1 11.1046 1 10V4C1 2.89543 1.89543 2 3 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 2V4M8 2H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5 7H9M5 10H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             <span>Copy</span>
           </button>
-          <button className="agent-action-btn" title="Regenerate" disabled={streaming}>
+          <button className="agent-action-btn" title="Regenerate" disabled={streaming} onClick={handleRegenerate}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1C10.3137 1 13 3.68629 13 7M13 7C13 10.3137 10.3137 13 7 13M1 7C1 3.68629 3.68629 1 7 1M7 1C3.68629 1 1 3.68629 1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M7 1V4M7 1L4.5 3.5M7 1L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             <span>Regenerate</span>
           </button>
           <div className="agent-action-divider" />
-          <button className="agent-action-btn" title="Helpful">
+          <button className="agent-action-btn" title="Helpful" onClick={() => handleFeedback("helpful")}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 4C11 5.10457 10.1046 6 9 6H5C3.89543 6 3 5.10457 3 4C3 2.89543 3.89543 2 5 2H9C10.1046 2 11 2.89543 11 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 10L9.5 12.5L12 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span>Helpful</span>
           </button>
-          <button className="agent-action-btn" title="Not helpful">
+          <button className="agent-action-btn" title="Not helpful" onClick={() => handleFeedback("not_helpful")}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 10C3 8.89543 3.89543 8 5 8H9C10.1046 8 11 8.89543 11 10C11 11.1046 10.1046 12 9 12H5C3.89543 12 3 11.1046 3 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 4L4.5 1.5L2 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span>Not helpful</span>
           </button>

@@ -76,16 +76,6 @@ export default function App() {
       .then(() => setApiStatus("connected"))
       .catch(() => setApiStatus("offline (start API on :8000)"));
 
-    (async () => {
-      try {
-        const s = await api.createSession("untitled.py", "# paste code and ask Vertico to refactor");
-        setSessionId(s.session_id);
-        fetchSessions();
-      } catch {
-        setApiStatus("offline (start API on :8000)");
-      }
-    })();
-
     return () => cancelRef.current?.();
   }, []);
 
@@ -102,10 +92,11 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const ensureSession = async (): Promise<string | null> => {
+  const ensureSession = async (filename?: string): Promise<string | null> => {
     if (sessionId) return sessionId;
     try {
-      const s = await api.createSession("untitled.py", "");
+      const name = filename || "untitled.py";
+      const s = await api.createSession(name, "");
       setSessionId(s.session_id);
       fetchSessions();
       return s.session_id;
@@ -116,13 +107,17 @@ export default function App() {
 
   const sendMessage = async (text: string) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
-    const sid = await ensureSession();
+    // Create session with first user message as name if no session exists
+    const sid = await ensureSession(sessionId ? undefined : text.slice(0, 50));
     if (!sid) {
       setMessages((prev) => [...prev, { role: "system", content: "API offline — start the Vertico API on port 8000." }]);
       return;
     }
     setStreaming(true);
     let acc = "";
+    let thinkingMessageIndex = -1;
+    // Get context file paths from chips
+    const contextFiles = contextChips.map(c => c.path || c.label).filter(Boolean);
     cancelRef.current = api.streamChat(sid, text, {
       onMessage: (data) => {
         const content = data.content ?? "";
@@ -131,7 +126,7 @@ export default function App() {
           setMessages((prev) => {
             const last = prev[prev.length - 1];
             if (last?.role === "assistant" && last?.streaming) return prev;
-            return [...prev, { role: "assistant", content: "", streaming: true }];
+            return [...prev, { role: "assistant", content: "", streaming: true, node: "thinking" }];
           });
           return;
         }
@@ -143,9 +138,9 @@ export default function App() {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === "assistant" && last?.streaming) {
-            return [...prev.slice(0, -1), { ...last, content: acc }];
+            return [...prev.slice(0, -1), { ...last, content: acc, streaming: true, node: data.node }];
           }
-          return [...prev, { role: "assistant", content: acc, streaming: true }];
+          return [...prev, { role: "assistant", content: acc, streaming: true, node: data.node }];
         });
 
         if (data.node === "refactorer" || data.node === "done") {
@@ -162,7 +157,7 @@ export default function App() {
           prev.map((m, i) => (i === prev.length - 1 ? { ...m, streaming: false } : m))
         );
       },
-    });
+    }, contextFiles);
   };
 
   const handlePickSession = (session: SessionItem) => {
@@ -307,6 +302,39 @@ export default function App() {
     setCheckpoints((prev) => prev.filter((c) => c.id !== checkpointId));
   }, []);
 
+  const handleRegenerate = useCallback((messageIndex: number) => {
+    // Find the user message that preceded this assistant message
+    const userMsgIndex = messages.slice(0, messageIndex).lastIndexOf(
+      messages.slice(0, messageIndex).find((m, i) => m.role === "user" && i < messageIndex)
+    );
+    // Simple approach: re-send the last user message
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+    if (lastUserMsg) {
+      // Remove messages after the user message
+      const userIdx = messages.lastIndexOf(lastUserMsg);
+      setMessages(prev => prev.slice(0, userIdx + 1));
+      sendMessage(lastUserMsg.content);
+    }
+  }, [messages, sendMessage]);
+
+  const handleFeedback = useCallback((messageIndex: number, feedback: "helpful" | "not_helpful") => {
+    // Could send feedback to backend here
+    console.log(`Feedback for message ${messageIndex}: ${feedback}`);
+    setMessages(prev => prev.map((m, i) => 
+      i === messageIndex ? { ...m, feedback } : m
+    ));
+  }, []);
+
+  const handleIndexRepo = useCallback(async () => {
+    try {
+      // Get workspace root from context or use a default
+      await api.indexRepo(".");
+      setMessages((prev) => [...prev, { role: "system", content: "Repository indexed successfully" }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { role: "system", content: `Failed to index repo: ${error instanceof Error ? error.message : "Unknown error"}` }]);
+    }
+  }, [api]);
+
   const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
 
   return (
@@ -345,7 +373,13 @@ export default function App() {
       <div className="flex-1 flex flex-row overflow-hidden min-h-0 relative">
         {/* Primary Pane: Chat */}
         <main className="flex-1 flex flex-col min-w-0 h-full">
-          <ChatWindow messages={messages} streaming={streaming} onSend={sendMessage} />
+          <ChatWindow 
+            messages={messages} 
+            streaming={streaming} 
+            onSend={sendMessage}
+            onRegenerate={handleRegenerate}
+            onFeedback={handleFeedback}
+          />
         </main>
 
         {/* Side Panel Overlay: Diffs, Sessions & Context */}
@@ -393,6 +427,7 @@ export default function App() {
             setQuickPickOpen(true);
           }}
           api={api}
+          onIndexRepo={handleIndexRepo}
         />
       </div>
 

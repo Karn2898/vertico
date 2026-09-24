@@ -165,7 +165,8 @@ export class ApiClient {
   streamChat(
     sessionId: string,
     text: string,
-    handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void }
+    handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void },
+    contextFiles?: string[]
   ): () => void {
     const controller = new AbortController();
     (async () => {
@@ -173,7 +174,7 @@ export class ApiClient {
         const res = await fetch(`${this.baseUrl}/chat/message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId, message: text }),
+          body: JSON.stringify({ session_id: sessionId, message: text, context_files: contextFiles }),
           signal: controller.signal,
         });
         if (!res.ok) {
