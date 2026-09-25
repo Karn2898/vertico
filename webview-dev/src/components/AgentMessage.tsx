@@ -247,7 +247,6 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
   if (isThinking) {
     return (
       <div
-        ref={contentRef}
         className={`agent-message agent-message--thinking ${isVisible ? "visible" : ""}`}
         onMouseEnter={() => setShowActions(false)}
         onMouseLeave={() => setShowActions(false)}
@@ -265,7 +264,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
               <span className="agent-label">Assistant</span>
             </div>
           )}
-          <div className="agent-content">
+          <div className="agent-content" ref={contentRef}>
             <ThinkingIndicator />
           </div>
         </div>
@@ -275,7 +274,6 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
 
   return (
     <div
-      ref={contentRef}
       className={`agent-message ${isVisible ? "visible" : ""} ${showActions ? "hovered" : ""}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
