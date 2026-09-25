@@ -212,6 +212,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
   const [isVisible, setIsVisible] = useState(false);
   const isSameTurn = isSameTurnAsPrevious(messages, index);
   const isThinking = message?.streaming && !message?.content?.trim();
+  const content = message?.content || "";
 
   const handleCopy = useCallback(async () => {
     try {
@@ -242,8 +243,6 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
       contentRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [isVisible, message?.content]);
-
-  const content = message?.content || "";
 
   if (isThinking) {
     return (
