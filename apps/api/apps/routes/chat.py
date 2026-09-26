@@ -59,12 +59,12 @@ except Exception as exc:
     logging.warning("agent_core.graphs is not available: %s", exc)
 
 
-def _get_llm(session: dict):
+def _get_llm(session: dict, mode: Optional[str] = None):
     provider = session.get("llm_provider")
     api_key = session.get("llm_api_key")
     model = session.get("llm_model")
     config = importlib.import_module("agent_core.config")
-    return config.get_llm(provider=provider, api_key=api_key, model=model)
+    return config.get_llm(provider=provider, api_key=api_key, model=model, mode=mode)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -73,11 +73,15 @@ class ChatMessage(BaseModel):
     content: str
     timestamp: str
     node: Optional[str] = None
+    mode: Optional[str] = None
 
 class SendMessageRequest(BaseModel):
     session_id: str
     message: str
     context_files: Optional[list[str]] = None
+    # speed mode: "fast" (cheaper/faster) or "thorough" (full quality);
+    # defaults to "fast" for older clients that omit it
+    mode: Optional[str] = None
 
 class ChatHistoryResponse(BaseModel):
     session_id: str
@@ -111,18 +115,18 @@ async def send_message(req: SendMessageRequest):
     _require(req.session_id)
     _ensure_history(req.session_id)
 
-    # save user message
-    _append_message(req.session_id, role="user", content=req.message)
+    # save user message (with the mode this message was sent under)
+    _append_message(req.session_id, role="user", content=req.message, mode=req.mode)
 
     if _is_task(req.message):
         return StreamingResponse(
-            _stream_agent(req.session_id, req.message, req.context_files),
+            _stream_agent(req.session_id, req.message, req.context_files, mode=req.mode),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     return StreamingResponse(
-        _stream_chat(req.session_id, req.message),
+        _stream_chat(req.session_id, req.message, mode=req.mode),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -157,6 +161,7 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
         role="assistant",
         content=content,
         node=node_name,
+        mode=sessions[session_id].get("agent_state", {}).get("mode"),
     )
 
     event = {
@@ -170,7 +175,7 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
     yield f"data: {json.dumps(event)}\n\n"
 
 
-async def _stream_agent(session_id: str, user_message: str, context_files: Optional[list[str]] = None):
+async def _stream_agent(session_id: str, user_message: str, context_files: Optional[list[str]] = None, mode: Optional[str] = None):
     """Compile and stream the refactor graph.
 
     Each node (reviewer, refactorer, linter) emits an SSE event.
@@ -193,7 +198,9 @@ async def _stream_agent(session_id: str, user_message: str, context_files: Optio
     agent_state["review_notes"] = ""
     agent_state["errors"] = None
     agent_state["iterations"] = 0
-    
+    # speed mode drives model selection / effort inside the graph
+    agent_state["mode"] = (mode or session.get("mode") or "fast").lower()
+
     # If context files provided, read them and add to candidate_files
     if context_files:
         from agent_core.workspace_tools import read_code_file
@@ -323,7 +330,7 @@ async def _stream_llm_round(llm, messages):
     }
 
 
-async def _stream_chat(session_id: str, user_message: str):
+async def _stream_chat(session_id: str, user_message: str, mode: Optional[str] = None):
     """Conversational path — no graph, just the LLM with history as context.
 
     Used for questions like "why did you change x?" or "what are the errors?"
@@ -332,11 +339,14 @@ async def _stream_chat(session_id: str, user_message: str):
 
     # immediate heartbeat so the UI shows the thinking animation right away
     yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
-    max_tool_rounds = 4
-
     session = sessions[session_id]
     agent_state = session["agent_state"]
-    llm = _get_llm(session)
+    effective_mode = (mode or session.get("mode") or "fast").lower()
+    agent_state["mode"] = effective_mode
+    llm = _get_llm(session, mode=effective_mode)
+    # "fast" gets fewer tool-calling rounds; "thorough" uses the full budget
+    max_tool_rounds = 4 if effective_mode == "thorough" else 2
+
     tools = [*workspace_tools, plan_file_changes, prepare_patch_session]
     tool_map = {tool.name: tool for tool in tools}
     if hasattr(llm, "bind_tools"):
@@ -429,7 +439,7 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 "content": "Based on the tool results above, provide a clear, final answer now. Do not call any more tools.",
             })
 
-            bare_llm = _get_llm(session)
+            bare_llm = _get_llm(session, mode=effective_mode)
             produced = False
             try:
                 async for event in _stream_llm_round(bare_llm, clean_messages):
@@ -449,7 +459,12 @@ Answer questions about the code, the refactoring process, or errors concisely.
         yield f"data: {json.dumps({'node': 'error', 'content': f'Stream error: {e}'})}\n\n"
     finally:
         if full_response:
-            _append_message(session_id, role="assistant", content=full_response)
+            _append_message(
+                session_id,
+                role="assistant",
+                content=full_response,
+                mode=agent_state.get("mode"),
+            )
         yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
 
 def _ensure_history(session_id: str):
@@ -461,6 +476,7 @@ def _append_message(
     role: str,
     content: str,
     node: Optional[str] = None,
+    mode: Optional[str] = None,
 ):
    _ensure_history(session_id)
    chat_histories[session_id].append(
@@ -469,6 +485,7 @@ def _append_message(
          "content": content,
          "timestamp": datetime.now(timezone.utc).isoformat(),
          "node": node,
+         "mode": mode,
       }
    )
 
