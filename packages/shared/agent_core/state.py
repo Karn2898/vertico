@@ -20,6 +20,8 @@ class RefactorState(TypedDict):
     needs_more_context: NotRequired[bool]
     patch_session_id: NotRequired[str]
     approval_status: NotRequired[str]
+    # speed mode: "fast" (cheaper model, fewer iterations) or "thorough" (full power)
+    mode: NotRequired[str]
 
 
 class BugfixState(RefactorState):
@@ -65,7 +67,12 @@ def code_linter(state: RefactorState):
 def code_review(state: RefactorState):
     """reviews the refactored code and provides feedback."""
     print("REVIEWING CODE")
-    from .config import llm
+    from .config import get_llm
+
+    # mode branch: "fast" uses the smaller/faster Gemini model;
+    # "thorough" uses the full-power config. Default (missing mode) = fast.
+    mode = (state.get("mode") or "fast").lower()
+    llm = get_llm(mode=mode)
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", "you are a strict senior python engineer . review the provided  code smellls , poor naming , violations , inefficiencies , output ONLY your review notes as a bulleted list ."),
@@ -79,7 +86,12 @@ def code_review(state: RefactorState):
 
 def code_refactorer(state: RefactorState):
     print(" REFRACTORING CODE T-T")
-    from .tools import llm_with_tools
+    from .config import get_llm
+    from .tools import tools as graph_tools
+
+    mode = (state.get("mode") or "fast").lower()
+    llm = get_llm(mode=mode)
+    llm_with_tools = llm.bind_tools(graph_tools) if hasattr(llm, "bind_tools") else llm
 
     error_feedback = ""
     if state.get("errors"):
@@ -102,7 +114,12 @@ def code_refactorer(state: RefactorState):
 
 def code_fixer(state: BugfixState):
     print("FIXING BUG")
-    from .tools import llm_with_tools
+    from .config import get_llm
+    from .tools import tools as graph_tools
+
+    mode = (state.get("mode") or "fast").lower()
+    llm = get_llm(mode=mode)
+    llm_with_tools = llm.bind_tools(graph_tools) if hasattr(llm, "bind_tools") else llm
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", "you are a senior python engineer. fix the provided code so that the following error no longer occurs. output only the fixed code without any explanations."),
