@@ -151,6 +151,15 @@ export default function App() {
         setStreaming(false);
         setMessages((prev) => [...prev, { role: "system", content: "Stream error." }]);
       },
+      onAbort: () => {
+        setStreaming(false);
+        cancelRef.current = null;
+        setStreaming(false);
+        cancelRef.current = null;
+        setMessages((prev) =>
+          prev.map((m, i) => (i === prev.length - 1 ? { ...m, streaming: false } : m))
+        );
+      },
       onDone: () => {
         setStreaming(false);
         setMessages((prev) =>
@@ -159,6 +168,15 @@ export default function App() {
       },
     }, contextFiles);
   };
+
+  const handleCancel = useCallback(() => {
+    cancelRef.current?.();
+    cancelRef.current = null;
+    setStreaming(false);
+    setMessages((prev) =>
+      prev.map((m, i) => (i === prev.length - 1 && m.streaming ? { ...m, streaming: false } : m))
+    );
+  }, []);
 
   const handlePickSession = (session: SessionItem) => {
     setSessionId(session.session_id);
@@ -320,7 +338,7 @@ export default function App() {
   const handleFeedback = useCallback((messageIndex: number, feedback: "helpful" | "not_helpful") => {
     // Could send feedback to backend here
     console.log(`Feedback for message ${messageIndex}: ${feedback}`);
-    setMessages(prev => prev.map((m, i) => 
+    setMessages(prev => prev.map((m, i) =>
       i === messageIndex ? { ...m, feedback } : m
     ));
   }, []);
@@ -373,10 +391,11 @@ export default function App() {
       <div className="flex-1 flex flex-row overflow-hidden min-h-0 relative">
         {/* Primary Pane: Chat */}
         <main className="flex-1 flex flex-col min-w-0 h-full">
-          <ChatWindow 
-            messages={messages} 
-            streaming={streaming} 
+          <ChatWindow
+            messages={messages}
+            streaming={streaming}
             onSend={sendMessage}
+            onCancel={handleCancel}
             onRegenerate={handleRegenerate}
             onFeedback={handleFeedback}
           />

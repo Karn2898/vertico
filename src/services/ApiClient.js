@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApiClient = void 0;
-class ApiClient {
+export class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
-        this.baseUrl = this.baseUrl.replace(/\/+$/, "");
+        this.patchSessions = new Map();
+        this.baseUrl = baseUrl.replace(/\/+$/, "");
         if (this.baseUrl.endsWith("/api")) {
             this.baseUrl = this.baseUrl.slice(0, -4);
         }
-        this.patchSessions = new Map();
     }
     async checkHealth() {
         const res = await fetch(`${this.baseUrl}/health`);
@@ -23,6 +20,12 @@ class ApiClient {
         });
         if (!res.ok)
             throw new Error(`createSession failed: ${res.statusText}`);
+        return (await res.json());
+    }
+    async listSessions() {
+        const res = await fetch(`${this.baseUrl}/sessions`);
+        if (!res.ok)
+            return [];
         return (await res.json());
     }
     async runAgent(sessionId, graph, error_message) {
@@ -66,6 +69,22 @@ class ApiClient {
         if (!res.ok)
             throw new Error(`rejectDiff failed: ${res.statusText}`);
     }
+    async applyPartialDiff(sessionId, acceptedHunkIndices, rejectedHunkIndices) {
+        const patchId = await this.ensurePatchSession(sessionId);
+        const res = await fetch(`${this.baseUrl}/patches/${patchId}/apply-partial`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                accepted_hunks: acceptedHunkIndices,
+                rejected_hunks: rejectedHunkIndices,
+            }),
+        });
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new Error(`applyPartialDiff failed: ${error.detail || res.statusText}`);
+        }
+        return await res.json();
+    }
     async preparePatch(sessionId, useGitStash = false) {
         const res = await fetch(`${this.baseUrl}/patches/from-session/${sessionId}`, {
             method: "POST",
@@ -80,61 +99,74 @@ class ApiClient {
     }
     async ensurePatchSession(sessionId) {
         const existing = this.patchSessions.get(sessionId);
-        if (existing) return existing;
+        if (existing)
+            return existing;
         const patch = await this.preparePatch(sessionId);
         return patch.session_id;
     }
+    // Additional helpers used by other parts of the extension (lightweight stubs)
     async getSessionState(sessionId) {
         const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/state`);
-        if (!res.ok) return {} as any;
+        if (!res.ok)
+            return {};
         return await res.json();
     }
     async getDiff(sessionId) {
         const res = await fetch(`${this.baseUrl}/diffs/${sessionId}`);
-        if (!res.ok) return { has_changes: false, diff: null } as any;
+        if (!res.ok)
+            return { has_changes: false, diff: null };
         return await res.json();
     }
-    streamChat(sessionId, text, handlers) {
+    streamChat(sessionId, text, handlers, contextFiles) {
         const controller = new AbortController();
         (async () => {
             try {
                 const res = await fetch(`${this.baseUrl}/chat/message`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: sessionId, message: text }),
+                    body: JSON.stringify({ session_id: sessionId, message: text, context_files: contextFiles }),
                     signal: controller.signal,
                 });
                 if (!res.ok) {
                     handlers.onError?.();
                     return;
                 }
-                const reader = res.body!.getReader();
+                const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = "";
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
+                    if (done)
+                        break;
                     buffer += decoder.decode(value, { stream: true });
                     const events = buffer.split("\n\n");
                     buffer = events.pop() ?? "";
                     for (const evt of events) {
                         const line = evt.trim();
-                        if (!line.startsWith("data:")) continue;
+                        if (!line.startsWith("data:"))
+                            continue;
                         const payload = line.slice(5).trim();
-                        if (!payload) continue;
+                        if (!payload)
+                            continue;
                         try {
                             handlers.onMessage(JSON.parse(payload));
-                        } catch {
+                        }
+                        catch {
                             /* ignore malformed */
                         }
                     }
                 }
                 handlers.onDone?.();
-            } catch {
-                handlers.onError?.();
+            }
+            catch {
+                if (controller.signal.aborted) {
+                    handlers.onAbort?.();
+                }
+                else {
+                    handlers.onError?.();
+                }
             }
         })();
         return () => controller.abort();
     }
 }
-exports.ApiClient = ApiClient;

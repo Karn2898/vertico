@@ -165,7 +165,7 @@ export class ApiClient {
   streamChat(
     sessionId: string,
     text: string,
-    handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void },
+    handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void; onAbort?: () => void },
     contextFiles?: string[]
   ): () => void {
     const controller = new AbortController();
@@ -204,7 +204,11 @@ export class ApiClient {
         }
         handlers.onDone?.();
       } catch {
-        handlers.onError?.();
+        if (controller.signal.aborted) {
+          handlers.onAbort?.();
+        } else {
+          handlers.onError?.();
+        }
       }
     })();
     return () => controller.abort();

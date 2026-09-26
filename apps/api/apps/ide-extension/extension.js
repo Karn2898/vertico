@@ -1,11 +1,20 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { ChatPanel } from "../../../../src/chat/ChatPanel";
 import { SessionManager } from "../../../../src/services/SessionManager";
-import { ContextCollector } from "../../../../src/context/ContextCollector";
+import { ContextCollector, findGitRoot } from "../../../../src/context/ContextCollector";
 import { InlineProvider } from "../../../../src/context/InlineProvider";
 import { DiffViewer } from "../../../../src/diff/DiffViewer";
 import { ApiClient } from "../../../../src/services/ApiClient";
 let sessionManager;
+function getWorkspaceRoot() {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+        const fileDir = path.dirname(editor.document.uri.fsPath);
+        return findGitRoot(fileDir);
+    }
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
 export function activate(context) {
     const apiUrl = vscode.workspace
         .getConfiguration("Vertico")
@@ -14,8 +23,15 @@ export function activate(context) {
     sessionManager = new SessionManager(api);
     const contextCollector = new ContextCollector();
     const diffViewer = new DiffViewer(api, sessionManager);
+    const chatPanel = new ChatPanel(context.extensionUri, api, sessionManager, contextCollector);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(ChatPanel.viewType, chatPanel, {
+        webviewOptions: { retainContextWhenHidden: true },
+    }));
     vscode.commands.registerCommand("vertico.startChat", () => {
-        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        chatPanel.reveal();
+    });
+    vscode.commands.registerCommand("vertico.showChat", () => {
+        chatPanel.reveal();
     });
     vscode.commands.registerCommand("vertico.refactorFile", async () => {
         const editor = vscode.window.activeTextEditor;
@@ -24,8 +40,9 @@ export function activate(context) {
         const code = editor.document.getText();
         const filename = editor.document.fileName;
         await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." }, async () => {
-            const session = await sessionManager.createSession(filename, code);
-            ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+            const workspaceRoot = getWorkspaceRoot();
+            const session = await sessionManager.createSession(filename, code, workspaceRoot);
+            chatPanel.reveal();
             await sessionManager.runGraph(session.session_id, "refactor");
         });
     });
@@ -35,8 +52,9 @@ export function activate(context) {
             return;
         const code = editor.document.getText();
         const filename = editor.document.fileName;
-        const session = await sessionManager.createSession(filename, code);
-        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        const workspaceRoot = getWorkspaceRoot();
+        const session = await sessionManager.createSession(filename, code, workspaceRoot);
+        chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "review");
     });
     vscode.commands.registerCommand("Vertico.fixbug", async () => {
@@ -48,12 +66,13 @@ export function activate(context) {
             return;
         const code = editor.document.getText();
         const filename = editor.document.fileName;
-        const session = await sessionManager.createSession(filename, code);
-        ChatPanel.createOrShow(context.extensionUri, api, sessionManager, contextCollector);
+        const workspaceRoot = getWorkspaceRoot();
+        const session = await sessionManager.createSession(filename, code, workspaceRoot);
+        chatPanel.reveal();
         await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
     });
     vscode.commands.registerCommand("vertico.indexRepo", async () => {
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        const workspaceRoot = getWorkspaceRoot();
         if (!workspaceRoot) {
             vscode.window.showErrorMessage("No workspace open");
             return;

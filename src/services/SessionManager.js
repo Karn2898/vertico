@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SessionManager = void 0;
-class SessionManager {
+export class SessionManager {
     constructor(api) {
         this.api = api;
         this.sessions = new Map();
         this.currentSessionId = null;
     }
-    async createSession(filename, code) {
-        const session = await this.api.createSession(filename, code);
+    async createSession(filename, code, workspaceRoot) {
+        const session = await this.api.createSession(filename, code, workspaceRoot);
         this.sessions.set(session.session_id, session);
         this.currentSessionId = session.session_id;
         return session;
@@ -48,4 +45,3 @@ class SessionManager {
         this.currentSessionId = null;
     }
 }
-exports.SessionManager = SessionManager;
