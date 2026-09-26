@@ -247,6 +247,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
   if (isThinking) {
     return (
       <div
+        ref={contentRef}
         className={`agent-message agent-message--thinking ${isVisible ? "visible" : ""}`}
         onMouseEnter={() => setShowActions(false)}
         onMouseLeave={() => setShowActions(false)}
@@ -257,14 +258,14 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
               <div className="agent-avatar" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <circle cx="10" cy="10" r="10" stroke="currentColor" strokeWidth="1.5" opacity="0.3"/>
-                  <path d="M10 6C12.2091 6 14 7.79086 14 10C14 12.2091 12.2091 14 10 14C7.79086 14 6 12.2091 6 10C6 7.79086 7.79086 6 10 6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M10 6C12.2091 6 14 7.79086 14 10C14 12.2091 12.2091 14 10 14C7.79086 14 6 12.2091 6 10 6C7.79086 6 10 6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   <path d="M10 14V16M10 16L8 14M10 16L12 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </div>
               <span className="agent-label">Assistant</span>
             </div>
           )}
-          <div className="agent-content" ref={contentRef}>
+          <div className="agent-content">
             <ThinkingIndicator />
           </div>
         </div>
@@ -274,6 +275,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
 
   return (
     <div
+      ref={contentRef}
       className={`agent-message ${isVisible ? "visible" : ""} ${showActions ? "hovered" : ""}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -284,7 +286,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
             <div className="agent-avatar" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <circle cx="10" cy="10" r="10" stroke="currentColor" strokeWidth="1.5" opacity="0.3"/>
-                <path d="M10 6C12.2091 6 14 7.79086 14 10C14 12.2091 12.2091 14 10 14C7.79086 14 6 12.2091 6 10C6 7.79086 7.79086 6 10 6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M10 6C12.2091 6 14 7.79086 14 10C14 12.2091 12.2091 14 10 14C7.79086 14 6 12.2091 6 10 6C7.79086 6 10 6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 <path d="M10 14V16M10 16L8 14M10 16L12 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </div>
@@ -297,7 +299,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
           </div>
         )}
 
-        <div className="agent-content" ref={contentRef}>
+        <div className="agent-content">
           {content.trim() ? (
             content.includes("```") ? (
               <CodeAware content={content} />
