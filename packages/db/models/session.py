@@ -19,6 +19,8 @@ class SessionModel(SQLModel, table=True):
     llm_provider: str = Field(default="nvidia")
     llm_api_key: Optional[str] = Field(default=None)
     llm_model: Optional[str] = Field(default=None)
+    # speed mode: "fast" (cheaper/faster) or "thorough" (full quality)
+    mode: str = Field(default="fast")
 
     original_code: str
     refactored_code: str = Field(default="")
