@@ -14,7 +14,10 @@ def decide_to_finish(state):
     """Stop when validation passes or the bounded retry budget is exhausted."""
     validation_errors = state.get("validation_errors")
     has_errors = bool(validation_errors) if validation_errors is not None else bool(state.get("errors"))
-    max_iterations = state.get("max_iterations", 3)
+    max_iterations = state.get("max_iterations")
+    if max_iterations is None:
+        # "fast" burns fewer retry iterations; "thorough" gets the full budget
+        max_iterations = 5 if (state.get("mode") or "fast").lower() == "thorough" else 2
     if not has_errors or state.get("iterations", 0) >= max_iterations:
         return "end"
     return "rewrite"
