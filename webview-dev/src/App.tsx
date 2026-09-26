@@ -105,7 +105,7 @@ export default function App() {
     }
   };
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, mode: "fast" | "thorough" = "fast") => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     // Create session with first user message as name if no session exists
     const sid = await ensureSession(sessionId ? undefined : text.slice(0, 50));
@@ -166,7 +166,7 @@ export default function App() {
           prev.map((m, i) => (i === prev.length - 1 ? { ...m, streaming: false } : m))
         );
       },
-    }, contextFiles);
+    }, contextFiles, mode);
   };
 
   const handleCancel = useCallback(() => {
