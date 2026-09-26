@@ -17,4 +17,6 @@ class MessageModel(SQLModel, table=True):
     role: str
     content: str
     node: Optional[str] = Field(default=None)
+    # speed mode used when this message was sent ("fast" | "thorough")
+    mode: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
