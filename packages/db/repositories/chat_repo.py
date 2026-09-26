@@ -9,16 +9,18 @@ class ChatRepo:
 
     def append(
         self,
-        ssession_id:str,
-        role:str,
-        content:str,
-        node:Optional[str]=None,
+        session_id: str,
+        role: str,
+        content: str,
+        node: Optional[str] = None,
+        mode: Optional[str] = None,
     ):
-        msg=MessageModel(
+        msg = MessageModel(
             session_id=session_id,
             role=role,
             content=content,
             node=node,
+            mode=mode,
         )
 
         self.session.add(msg)
