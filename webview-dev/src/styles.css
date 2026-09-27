@@ -13,6 +13,8 @@
   --dim: #6b5f58;
   --border: #2a2220;
   --primary: var(--gold);
+  --chat-font-size: 0.8125rem;   /* 13px - for message content */
+  --chat-input-font-size: 0.8125rem; /* 13px - for input */
 }
 * { box-sizing: border-box; }
 body {
@@ -20,6 +22,7 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--chat-font-size);
 }
 
 /* === CYBERPUNK: full-viewport scanline mesh + vignette === */
@@ -82,7 +85,8 @@ body::after {
 .px-4 { padding-left: 1rem; padding-right: 1rem; }
 .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 .gap-2 { gap: 0.5rem; }
-.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: var(--chat-font-size); }
 .text-center { text-align: center; }
 .mt-8 { margin-top: 2rem; }
 .font-medium { font-weight: 500; }
@@ -208,7 +212,7 @@ button {
 }
 input {
   background: #1b1513; border: 1px solid var(--border); border-radius: 8px;
-  color: var(--fg); padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none;
+  color: var(--fg); padding: 0.5rem 0.75rem; font-size: var(--chat-input-font-size); outline: none;
 }
 input:focus { border-color: var(--gold); box-shadow: 0 0 0 1.5px var(--gold-glow); }
 input::placeholder { color: var(--dim); }
@@ -1051,7 +1055,7 @@ input::placeholder { color: var(--dim); }
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--chat-font-size);
   padding: 8px 0;
 }
 .agent-thinking-dots {
