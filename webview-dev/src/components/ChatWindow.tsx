@@ -1,20 +1,21 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { MessageBubble } from "@src/components/MessageBubble";
 import { AgentMessage } from "@src/components/AgentMessage";
-import { ModeSelector, ChatMode } from "@src/components/ModeSelector";
+import { ModelSelector } from "@src/components/ModelSelector";
 
 interface Props {
   messages: any[];
   streaming: boolean;
-  onSend: (text: string, mode: ChatMode) => void;
+  onSend: (text: string, model: string) => void;
   onCancel?: () => void;
   onRegenerate?: (messageIndex: number) => void;
   onFeedback?: (messageIndex: number, feedback: "helpful" | "not_helpful") => void;
+  apiUrl: string;
 }
 
-export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback }: Props) {
+export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [mode, setMode] = useState<ChatMode>("fast");
+  const [model, setModel] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef<boolean>(true);
@@ -36,10 +37,10 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
   const handleSend = useCallback(() => {
     const text = inputRef.current?.value.trim();
     if (!text || streaming) return;
-    onSend(text, mode);
+    onSend(text, model);
     if (inputRef.current) inputRef.current.value = "";
     stickToBottomRef.current = true;
-  }, [streaming, onSend, mode]);
+  }, [streaming, onSend, model]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -79,7 +80,7 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
 
       {/* input */}
       <div className="p-3 border-t border-border flex gap-2 flex-shrink-0">
-        <ModeSelector value={mode} onChange={setMode} disabled={streaming} />
+        <ModelSelector value={model} onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
         <input
           ref={inputRef}
           className="flex-1 bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
