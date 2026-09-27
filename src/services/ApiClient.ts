@@ -33,7 +33,7 @@ export interface PatchSession {
   git_head?: string | null;
 }
 
-export type ChatMode = "fast" | "thorough";
+export type ChatModel = string;
 
 export class ApiClient {
   private patchSessions = new Map<string, string>();
@@ -169,7 +169,7 @@ export class ApiClient {
     text: string,
     handlers: { onMessage: (data: any) => void; onError?: () => void; onDone?: () => void; onAbort?: () => void },
     contextFiles?: string[],
-    mode?: ChatMode
+    model?: string
   ): () => void {
     const controller = new AbortController();
     (async () => {
@@ -181,7 +181,7 @@ export class ApiClient {
             session_id: sessionId,
             message: text,
             context_files: contextFiles,
-            mode: mode ?? "fast",
+            model: model ?? "",
           }),
           signal: controller.signal,
         });
