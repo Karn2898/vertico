@@ -87,6 +87,13 @@ _PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "models": {
+            "nemotron-3.5-lightning": "nvidia/nemotron-3.5-lightning-30b-a3b",
+            "deepseek-v4.1-flash": "deepseek-ai/deepseek-v4.1-flash",
+            "glm-5.3": "z-ai/glm-5.3",
+            "laguna-xs-2.1": "poolside/laguna-xs-2.1",
+            "ising-calibration-1.5": "nvidia/ising-calibration-1.5-31b",
+        },
         "requires_key": False,
         "extra_body": {
             "chat_template_kwargs": {"enable_thinking": True},
@@ -145,9 +152,7 @@ def get_llm(
     if provider == "gemini":
         if not api_key:
             raise RuntimeError("Gemini provider requires an api_key")
-        # speed-mode aware: when no explicit model is pinned, pick the model
-        # for the requested mode ('fast' -> gemini-2.0-flash-lite, 'thorough' -> gemini-2.5-pro).
-        resolved = model or cfg.get("models", {}).get((mode or "fast").lower()) or cfg["model"]
+        resolved = model or cfg["model"]
         return _GeminiLLM(api_key=api_key, model=resolved)
 
     if provider == "claude":
