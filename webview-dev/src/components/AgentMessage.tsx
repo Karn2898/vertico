@@ -210,6 +210,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
   const actionsRef = useRef<HTMLDivElement>(null);
   const [showActions, setShowActions] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const isSameTurn = isSameTurnAsPrevious(messages, index);
   const isThinking = message?.streaming && !message?.content?.trim();
   const content = message?.content || "";
@@ -230,6 +231,24 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
     onFeedback?.(index, feedback);
   }, [index, onFeedback]);
 
+  const showActionsDelayed = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = undefined;
+    }
+    setShowActions(true);
+  }, []);
+
+  const hideActionsDelayed = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    hideTimerRef.current = setTimeout(() => {
+      setShowActions(false);
+      hideTimerRef.current = undefined;
+    }, 150);
+  }, []);
+
   useEffect(() => {
     // Entrance animation
     requestAnimationFrame(() => {
@@ -244,13 +263,18 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
     }
   }, [isVisible, message?.content]);
 
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    }, []);
+
   if (isThinking) {
     return (
       <div
         ref={contentRef}
         className={`agent-message agent-message--thinking ${isVisible ? "visible" : ""}`}
-        onMouseEnter={() => setShowActions(false)}
-        onMouseLeave={() => setShowActions(false)}
       >
         <div className="agent-message-inner">
           {!isSameTurn && (
@@ -277,8 +301,8 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
     <div
       ref={contentRef}
       className={`agent-message ${isVisible ? "visible" : ""} ${showActions ? "hovered" : ""}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={showActionsDelayed}
+      onMouseLeave={hideActionsDelayed}
     >
       <div className="agent-message-inner">
         {!isSameTurn && (
@@ -312,7 +336,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
         </div>
 
         {/* Hover-reveal action row */}
-        <div ref={actionsRef} className="agent-actions">
+        <div ref={actionsRef} className="agent-actions" onMouseEnter={showActionsDelayed} onMouseLeave={hideActionsDelayed}>
           <button className="agent-action-btn" title="Copy message" onClick={handleCopy}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2H9C10.1046 2 11 2.89543 11 4V10C11 11.1046 10.1046 12 9 12H3C1.89543 12 1 11.1046 1 10V4C1 2.89543 1.89543 2 3 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 2V4M8 2H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5 7H9M5 10H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             <span>Copy</span>
