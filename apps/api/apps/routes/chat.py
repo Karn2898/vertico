@@ -59,12 +59,40 @@ except Exception as exc:
     logging.warning("agent_core.graphs is not available: %s", exc)
 
 
-def _get_llm(session: dict, mode: Optional[str] = None):
+def _get_llm(session: dict, model: Optional[str] = None, mode: Optional[str] = None):
     provider = session.get("llm_provider")
     api_key = session.get("llm_api_key")
-    model = session.get("llm_model")
+    session_model = session.get("llm_model")
     config = importlib.import_module("agent_core.config")
-    return config.get_llm(provider=provider, api_key=api_key, model=model, mode=mode)
+    return config.get_llm(provider=provider, api_key=api_key, model=model or session_model, mode=mode)
+
+
+def _infer_mode(model: Optional[str]) -> str:
+    if not model:
+        return "fast"
+    lower = model.lower()
+    if any(k in lower for k in ["lite", "flash-lite"]):
+        return "fast"
+    return "thorough"
+
+
+def _format_model_label(model_id: str) -> str:
+    name = model_id.split("/")[-1]
+    name = re.sub(r"-\d{8}$", "", name)
+    name = name.replace("-", " ").replace("_", " ").title()
+    return name
+
+
+_MODEL_DESCRIPTORS = {
+    "gemini-2.0-flash": "Balanced",
+    "gemini-2.0-flash-lite": "Fastest",
+    "gemini-2.5-pro": "Most capable",
+    "nvidia/nemotron-3.5-lightning-30b-a3b": "Nemotron 3.5 Lightning",
+    "deepseek-ai/deepseek-v4.1-flash": "DeepSeek V4.1 Flash",
+    "z-ai/glm-5.3": "GLM 5.3",
+    "poolside/laguna-xs-2.1": "Laguna XS 2.1",
+    "nvidia/ising-calibration-1.5-31b": "Ising Calibration 1.5",
+}
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -74,14 +102,13 @@ class ChatMessage(BaseModel):
     timestamp: str
     node: Optional[str] = None
     mode: Optional[str] = None
+    model: Optional[str] = None
 
 class SendMessageRequest(BaseModel):
     session_id: str
     message: str
     context_files: Optional[list[str]] = None
-    # speed mode: "fast" (cheaper/faster) or "thorough" (full quality);
-    # defaults to "fast" for older clients that omit it
-    mode: Optional[str] = None
+    model: Optional[str] = None
 
 class ChatHistoryResponse(BaseModel):
     session_id: str
@@ -115,18 +142,20 @@ async def send_message(req: SendMessageRequest):
     _require(req.session_id)
     _ensure_history(req.session_id)
 
-    # save user message (with the mode this message was sent under)
-    _append_message(req.session_id, role="user", content=req.message, mode=req.mode)
+    if req.model:
+        sessions[req.session_id]["llm_model"] = req.model
+
+    _append_message(req.session_id, role="user", content=req.message, mode=None, model=req.model)
 
     if _is_task(req.message):
         return StreamingResponse(
-            _stream_agent(req.session_id, req.message, req.context_files, mode=req.mode),
+            _stream_agent(req.session_id, req.message, req.context_files, model=req.model),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     return StreamingResponse(
-        _stream_chat(req.session_id, req.message, mode=req.mode),
+        _stream_chat(req.session_id, req.message, model=req.model),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -151,6 +180,36 @@ def clear_history(session_id: str):
     chat_histories[session_id]=[]
     return {"cleared":session_id}
 
+
+@router.get("/models")
+def list_models():
+    config = importlib.import_module("agent_core.config")
+    models = []
+    seen = set()
+    for provider_id, provider_cfg in config._PROVIDERS.items():
+        default_model = provider_cfg.get("model")
+        if default_model and default_model not in seen:
+            seen.add(default_model)
+            desc = _MODEL_DESCRIPTORS.get(default_model)
+            models.append({
+                "id": default_model,
+                "provider": provider_id,
+                "label": _format_model_label(default_model),
+                "description": desc or f"{provider_id.capitalize()} default",
+            })
+        mode_models = provider_cfg.get("models", {})
+        for mode, model_id in mode_models.items():
+            if model_id not in seen:
+                seen.add(model_id)
+                desc = _MODEL_DESCRIPTORS.get(model_id)
+                models.append({
+                    "id": model_id,
+                    "provider": provider_id,
+                    "label": _format_model_label(model_id),
+                    "description": desc or mode.capitalize(),
+                })
+    return models
+
 # streaming generators
 def _process_node(session_id: str, node_name: str, node_output: dict):
     sessions[session_id]["agent_state"].update(node_output)
@@ -162,6 +221,7 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
         content=content,
         node=node_name,
         mode=sessions[session_id].get("agent_state", {}).get("mode"),
+        model=sessions[session_id].get("llm_model"),
     )
 
     event = {
@@ -175,7 +235,7 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
     yield f"data: {json.dumps(event)}\n\n"
 
 
-async def _stream_agent(session_id: str, user_message: str, context_files: Optional[list[str]] = None, mode: Optional[str] = None):
+async def _stream_agent(session_id: str, user_message: str, context_files: Optional[list[str]] = None, model: Optional[str] = None):
     """Compile and stream the refactor graph.
 
     Each node (reviewer, refactorer, linter) emits an SSE event.
@@ -198,8 +258,11 @@ async def _stream_agent(session_id: str, user_message: str, context_files: Optio
     agent_state["review_notes"] = ""
     agent_state["errors"] = None
     agent_state["iterations"] = 0
-    # speed mode drives model selection / effort inside the graph
-    agent_state["mode"] = (mode or session.get("mode") or "fast").lower()
+    # model drives effort inside the graph; derive speed mode from model capability
+    effective_mode = _infer_mode(model)
+    agent_state["mode"] = effective_mode
+    if model:
+        sessions[session_id]["llm_model"] = model
 
     # If context files provided, read them and add to candidate_files
     if context_files:
@@ -330,7 +393,7 @@ async def _stream_llm_round(llm, messages):
     }
 
 
-async def _stream_chat(session_id: str, user_message: str, mode: Optional[str] = None):
+async def _stream_chat(session_id: str, user_message: str, model: Optional[str] = None):
     """Conversational path — no graph, just the LLM with history as context.
 
     Used for questions like "why did you change x?" or "what are the errors?"
@@ -341,10 +404,12 @@ async def _stream_chat(session_id: str, user_message: str, mode: Optional[str] =
     yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
     session = sessions[session_id]
     agent_state = session["agent_state"]
-    effective_mode = (mode or session.get("mode") or "fast").lower()
+    effective_mode = _infer_mode(model)
     agent_state["mode"] = effective_mode
-    llm = _get_llm(session, mode=effective_mode)
-    # "fast" gets fewer tool-calling rounds; "thorough" uses the full budget
+    if model:
+        sessions[session_id]["llm_model"] = model
+    llm = _get_llm(session, model=model)
+    # "thorough" gets more tool-calling rounds; "fast" uses a tighter budget
     max_tool_rounds = 4 if effective_mode == "thorough" else 2
 
     tools = [*workspace_tools, plan_file_changes, prepare_patch_session]
@@ -439,7 +504,7 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 "content": "Based on the tool results above, provide a clear, final answer now. Do not call any more tools.",
             })
 
-            bare_llm = _get_llm(session, mode=effective_mode)
+            bare_llm = _get_llm(session, model=model)
             produced = False
             try:
                 async for event in _stream_llm_round(bare_llm, clean_messages):
@@ -464,6 +529,7 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 role="assistant",
                 content=full_response,
                 mode=agent_state.get("mode"),
+                model=sessions[session_id].get("llm_model"),
             )
         yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
 
@@ -477,6 +543,7 @@ def _append_message(
     content: str,
     node: Optional[str] = None,
     mode: Optional[str] = None,
+    model: Optional[str] = None,
 ):
    _ensure_history(session_id)
    chat_histories[session_id].append(
@@ -486,6 +553,7 @@ def _append_message(
          "timestamp": datetime.now(timezone.utc).isoformat(),
          "node": node,
          "mode": mode,
+         "model": model,
       }
    )
 
