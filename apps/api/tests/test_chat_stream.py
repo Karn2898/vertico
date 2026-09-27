@@ -17,8 +17,12 @@ def test_stream_chat_uses_session_llm(monkeypatch):
             self.calls.append(messages)
             return FakeResponse()
 
+        async def astream(self, messages):
+            response = await self.ainvoke(messages)
+            yield response
+
     fake_llm = FakeLLM()
-    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    monkeypatch.setattr(chat, "_get_llm", lambda session, model=None, mode=None: fake_llm)
 
     chat.sessions["sess-1"] = {
         "agent_state": {
@@ -43,10 +47,17 @@ def test_stream_chat_uses_session_llm(monkeypatch):
 
 
 def test_stream_chat_executes_requested_workspace_tool(monkeypatch):
+    class FakeToolCallChunk:
+        def __init__(self, index, id, name, args):
+            self.index = index
+            self.id = id
+            self.name = name
+            self.args = args
+
     class FakeResponse:
-        def __init__(self, content="", tool_calls=None):
+        def __init__(self, content="", tool_call_chunks=None):
             self.content = content
-            self.tool_calls = tool_calls or []
+            self.tool_call_chunks = tool_call_chunks or []
 
     class FakeLLM:
         def __init__(self):
@@ -56,22 +67,23 @@ def test_stream_chat_executes_requested_workspace_tool(monkeypatch):
             self.calls += 1
             if self.calls == 1:
                 return FakeResponse(
-                    tool_calls=[
-                        {
-                            "id": "call-1",
-                            "name": "read_code_file",
-                            "args": {
-                                "path": "packages/shared/agent_core/state.py",
-                                "start_line": 1,
-                                "end_line": 1,
-                            },
-                        }
+                    tool_call_chunks=[
+                        FakeToolCallChunk(
+                            0,
+                            "call-1",
+                            "read_code_file",
+                            '{"path": "packages/shared/agent_core/state.py", "start_line": 1, "end_line": 1}',
+                        )
                     ]
                 )
             return FakeResponse("I read the file.")
 
+        async def astream(self, messages):
+            response = await self.ainvoke(messages)
+            yield response
+
     fake_llm = FakeLLM()
-    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    monkeypatch.setattr(chat, "_get_llm", lambda session, model=None, mode=None: fake_llm)
     chat.sessions["tool-sess"] = {
         "agent_state": {"iterations": 0, "errors": None, "review_notes": ""}
     }
@@ -89,10 +101,17 @@ def test_stream_chat_uses_alternate_workspace_root(tmp_path, monkeypatch):
     external_file = tmp_path / "main.py"
     external_file.write_text("print('hello from remote workspace')\n", encoding="utf-8")
 
+    class FakeToolCallChunk:
+        def __init__(self, index, id, name, args):
+            self.index = index
+            self.id = id
+            self.name = name
+            self.args = args
+
     class FakeResponse:
-        def __init__(self, content="", tool_calls=None):
+        def __init__(self, content="", tool_call_chunks=None):
             self.content = content
-            self.tool_calls = tool_calls or []
+            self.tool_call_chunks = tool_call_chunks or []
 
     class FakeLLM:
         def __init__(self):
@@ -102,22 +121,23 @@ def test_stream_chat_uses_alternate_workspace_root(tmp_path, monkeypatch):
             self.calls += 1
             if self.calls == 1:
                 return FakeResponse(
-                    tool_calls=[
-                        {
-                            "id": "call-1",
-                            "name": "read_code_file",
-                            "args": {
-                                "path": "main.py",
-                                "start_line": 1,
-                                "end_line": 10,
-                            },
-                        }
+                    tool_call_chunks=[
+                        FakeToolCallChunk(
+                            0,
+                            "call-1",
+                            "read_code_file",
+                            '{"path": "main.py", "start_line": 1, "end_line": 10}',
+                        )
                     ]
                 )
             return FakeResponse("Read external file successfully.")
 
+        async def astream(self, messages):
+            response = await self.ainvoke(messages)
+            yield response
+
     fake_llm = FakeLLM()
-    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    monkeypatch.setattr(chat, "_get_llm", lambda session, model=None, mode=None: fake_llm)
     chat.sessions["ext-sess"] = {
         "workspace_root": str(tmp_path),
         "agent_state": {"iterations": 0, "errors": None, "review_notes": ""},
@@ -168,8 +188,12 @@ app.py
                 )
             return FakeResponse("Parsed pseudo-xml tool call and read app.py successfully.")
 
+        async def astream(self, messages):
+            response = await self.ainvoke(messages)
+            yield response
+
     fake_llm = FakeLLM()
-    monkeypatch.setattr(chat, "_get_llm", lambda session: fake_llm)
+    monkeypatch.setattr(chat, "_get_llm", lambda session, model=None, mode=None: fake_llm)
     chat.sessions["xml-sess"] = {
         "workspace_root": str(tmp_path),
         "agent_state": {"iterations": 0, "errors": None, "review_notes": ""},
