@@ -89,7 +89,7 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
           />
         </div>
         <div className="px-3 pb-3 flex items-center gap-2 border-t border-border">
-          <ModelSelector value={model} onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
+          <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
           <div className="flex-1" />
           {streaming ? (
             <button
