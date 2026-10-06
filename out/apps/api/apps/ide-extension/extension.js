@@ -1,0 +1,102 @@
+import * as vscode from "vscode";
+import * as path from "path";
+import { ChatPanel } from "../../../../src/chat/ChatPanel";
+import { SessionManager } from "../../../../src/services/SessionManager";
+import { ContextCollector, findGitRoot } from "../../../../src/context/ContextCollector";
+import { InlineProvider } from "../../../../src/context/InlineProvider";
+import { DiffViewer } from "../../../../src/diff/DiffViewer";
+import { ApiClient } from "../../../../src/services/ApiClient";
+let sessionManager;
+function getWorkspaceRoot() {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+        const fileDir = path.dirname(editor.document.uri.fsPath);
+        return findGitRoot(fileDir);
+    }
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+export function activate(context) {
+    const apiUrl = vscode.workspace
+        .getConfiguration("Vertico")
+        .get("apiUrl", "http://localhost:8000");
+    const api = new ApiClient(apiUrl);
+    sessionManager = new SessionManager(api);
+    const contextCollector = new ContextCollector();
+    const diffViewer = new DiffViewer(api, sessionManager);
+    const chatPanel = new ChatPanel(context.extensionUri, api, sessionManager, contextCollector);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider(ChatPanel.viewType, chatPanel, {
+        webviewOptions: { retainContextWhenHidden: true },
+    }));
+    vscode.commands.registerCommand("vertico.startChat", () => {
+        chatPanel.reveal();
+    });
+    vscode.commands.registerCommand("vertico.showChat", () => {
+        chatPanel.reveal();
+    });
+    vscode.commands.registerCommand("vertico.refactorFile", async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor)
+            return;
+        const code = editor.document.getText();
+        const filename = editor.document.fileName;
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." }, async () => {
+            const workspaceRoot = getWorkspaceRoot();
+            const session = await sessionManager.createSession(filename, code, workspaceRoot);
+            chatPanel.reveal();
+            await sessionManager.runGraph(session.session_id, "refactor");
+        });
+    });
+    vscode.commands.registerCommand("Vertico.reviewFile", async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor)
+            return;
+        const code = editor.document.getText();
+        const filename = editor.document.fileName;
+        const workspaceRoot = getWorkspaceRoot();
+        const session = await sessionManager.createSession(filename, code, workspaceRoot);
+        chatPanel.reveal();
+        await sessionManager.runGraph(session.session_id, "review");
+    });
+    vscode.commands.registerCommand("Vertico.fixbug", async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor)
+            return;
+        const errorMsg = await vscode.window.showInputBox({ prompt: "Describe the bug you want to fix" });
+        if (!errorMsg)
+            return;
+        const code = editor.document.getText();
+        const filename = editor.document.fileName;
+        const workspaceRoot = getWorkspaceRoot();
+        const session = await sessionManager.createSession(filename, code, workspaceRoot);
+        chatPanel.reveal();
+        await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
+    });
+    vscode.commands.registerCommand("vertico.indexRepo", async () => {
+        const workspaceRoot = getWorkspaceRoot();
+        if (!workspaceRoot) {
+            vscode.window.showErrorMessage("No workspace open");
+            return;
+        }
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: "Vertico: Indexing repo ..." }, async () => {
+            await api.indexRepo(workspaceRoot);
+            vscode.window.showInformationMessage("Repository indexed successfully");
+        });
+    });
+    vscode.commands.registerCommand("vertico.acceptDiff", async () => {
+        const sessionId = sessionManager.currentSessionId;
+        if (!sessionId)
+            return;
+        await diffViewer.accept(sessionId);
+    });
+    vscode.commands.registerCommand("vertico.rejectDiff", async () => {
+        const sessionId = sessionManager.currentSessionId;
+        if (!sessionId)
+            return;
+        await diffViewer.reject(sessionId);
+    });
+    const inlineProvider = new InlineProvider(api, sessionManager);
+    context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider({ pattern: "**" }, inlineProvider));
+}
+export function deactivate() {
+    sessionManager?.cleanup();
+}

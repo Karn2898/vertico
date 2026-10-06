@@ -13,14 +13,12 @@ class ChatRepo:
         role: str,
         content: str,
         node: Optional[str] = None,
-        mode: Optional[str] = None,
     ):
         msg = MessageModel(
             session_id=session_id,
             role=role,
             content=content,
             node=node,
-            mode=mode,
         )
 
         self.session.add(msg)

@@ -1,20 +1,21 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { MessageBubble } from "@src/components/MessageBubble";
 import { AgentMessage } from "@src/components/AgentMessage";
-import { ModeSelector, ChatMode } from "@src/components/ModeSelector";
+import { ModelSelector } from "@src/components/ModelSelector";
 
 interface Props {
   messages: any[];
   streaming: boolean;
-  onSend: (text: string, mode: ChatMode) => void;
+  onSend: (text: string, model: string) => void;
   onCancel?: () => void;
   onRegenerate?: (messageIndex: number) => void;
   onFeedback?: (messageIndex: number, feedback: "helpful" | "not_helpful") => void;
+  apiUrl: string;
 }
 
-export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback }: Props) {
+export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [mode, setMode] = useState<ChatMode>("fast");
+  const [model, setModel] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef<boolean>(true);
@@ -36,10 +37,10 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
   const handleSend = useCallback(() => {
     const text = inputRef.current?.value.trim();
     if (!text || streaming) return;
-    onSend(text, mode);
+    onSend(text, model);
     if (inputRef.current) inputRef.current.value = "";
     stickToBottomRef.current = true;
-  }, [streaming, onSend, mode]);
+  }, [streaming, onSend, model]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -78,30 +79,35 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
       </div>
 
       {/* input */}
-      <div className="p-3 border-t border-border flex gap-2 flex-shrink-0">
-        <ModeSelector value={mode} onChange={setMode} disabled={streaming} />
-        <input
-          ref={inputRef}
-          className="flex-1 bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
-          onKeyDown={handleKeyDown}
-          placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
-        />
-        {streaming ? (
-          <button
-            onClick={onCancel}
-            title="Stop generating"
-            className="bg-[#2b2b2b] text-[#f1e4d9] px-4 py-2 rounded-lg text-sm hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
-          >
-            ■ Stop
-          </button>
-        ) : (
-          <button
-            onClick={handleSend}
-            className="bg-[#6e2a3a] text-[#f1e4d9] px-4 py-2 rounded-lg text-sm hover:bg-[#7d3244] transition-colors flex-shrink-0"
-          >
-            Send
-          </button>
-        )}
+      <div className="border-t border-border flex-shrink-0">
+        <div className="p-3">
+          <input
+            ref={inputRef}
+            className="w-full bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
+            onKeyDown={handleKeyDown}
+            placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
+          />
+        </div>
+        <div className="px-3 pb-3 flex items-center gap-2 border-t border-border">
+          <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
+          <div className="flex-1" />
+          {streaming ? (
+            <button
+              onClick={onCancel}
+              title="Stop generating"
+              className="bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
+            >
+              ■ Stop
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              className="bg-[#6e2a3a] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0"
+            >
+              Send
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -59,21 +59,12 @@ except Exception as exc:
     logging.warning("agent_core.graphs is not available: %s", exc)
 
 
-def _get_llm(session: dict, model: Optional[str] = None, mode: Optional[str] = None):
+def _get_llm(session: dict, model: Optional[str] = None):
     provider = session.get("llm_provider")
     api_key = session.get("llm_api_key")
     session_model = session.get("llm_model")
     config = importlib.import_module("agent_core.config")
-    return config.get_llm(provider=provider, api_key=api_key, model=model or session_model, mode=mode)
-
-
-def _infer_mode(model: Optional[str]) -> str:
-    if not model:
-        return "fast"
-    lower = model.lower()
-    if any(k in lower for k in ["lite", "flash-lite"]):
-        return "fast"
-    return "thorough"
+    return config.get_llm(provider=provider, api_key=api_key, model=model or session_model)
 
 
 def _format_model_label(model_id: str) -> str:
@@ -101,7 +92,6 @@ class ChatMessage(BaseModel):
     content: str
     timestamp: str
     node: Optional[str] = None
-    mode: Optional[str] = None
     model: Optional[str] = None
 
 class SendMessageRequest(BaseModel):
@@ -145,7 +135,7 @@ async def send_message(req: SendMessageRequest):
     if req.model:
         sessions[req.session_id]["llm_model"] = req.model
 
-    _append_message(req.session_id, role="user", content=req.message, mode=None, model=req.model)
+    _append_message(req.session_id, role="user", content=req.message, model=req.model)
 
     if _is_task(req.message):
         return StreamingResponse(
@@ -220,7 +210,6 @@ def _process_node(session_id: str, node_name: str, node_output: dict):
         role="assistant",
         content=content,
         node=node_name,
-        mode=sessions[session_id].get("agent_state", {}).get("mode"),
         model=sessions[session_id].get("llm_model"),
     )
 
@@ -258,11 +247,9 @@ async def _stream_agent(session_id: str, user_message: str, context_files: Optio
     agent_state["review_notes"] = ""
     agent_state["errors"] = None
     agent_state["iterations"] = 0
-    # model drives effort inside the graph; derive speed mode from model capability
-    effective_mode = _infer_mode(model)
-    agent_state["mode"] = effective_mode
     if model:
         sessions[session_id]["llm_model"] = model
+    agent_state["llm_model"] = sessions[session_id].get("llm_model")
 
     # If context files provided, read them and add to candidate_files
     if context_files:
@@ -404,13 +391,11 @@ async def _stream_chat(session_id: str, user_message: str, model: Optional[str] 
     yield f"data: {json.dumps({'node': 'thinking', 'content': ''})}\n\n"
     session = sessions[session_id]
     agent_state = session["agent_state"]
-    effective_mode = _infer_mode(model)
-    agent_state["mode"] = effective_mode
     if model:
         sessions[session_id]["llm_model"] = model
     llm = _get_llm(session, model=model)
-    # "thorough" gets more tool-calling rounds; "fast" uses a tighter budget
-    max_tool_rounds = 4 if effective_mode == "thorough" else 2
+    # default tool-calling rounds
+    max_tool_rounds = 4
 
     tools = [*workspace_tools, plan_file_changes, prepare_patch_session]
     tool_map = {tool.name: tool for tool in tools}
@@ -528,7 +513,6 @@ Answer questions about the code, the refactoring process, or errors concisely.
                 session_id,
                 role="assistant",
                 content=full_response,
-                mode=agent_state.get("mode"),
                 model=sessions[session_id].get("llm_model"),
             )
         yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
@@ -542,7 +526,6 @@ def _append_message(
     role: str,
     content: str,
     node: Optional[str] = None,
-    mode: Optional[str] = None,
     model: Optional[str] = None,
 ):
    _ensure_history(session_id)
@@ -552,7 +535,6 @@ def _append_message(
          "content": content,
          "timestamp": datetime.now(timezone.utc).isoformat(),
          "node": node,
-         "mode": mode,
          "model": model,
       }
    )

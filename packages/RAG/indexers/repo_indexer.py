@@ -7,9 +7,9 @@ from db.models.embedding import EmbeddingModel
 from db.repositories.embedding_repo import EmbeddingRepo
 from sqlmodel import Session
 
-from ..chunker.code_chunker import chunk_file, CodeChunk
+from chunker.chunker import chunk_file, CodeChunk
 try:
-    from rag.embedder.nvidia_embedder import embed_batch
+    from embedder.RAG_embedders import embed_batch
 except Exception:
     embed_batch = None
 

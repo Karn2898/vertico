@@ -10,8 +10,6 @@ class CreateSessionRequest(BaseModel):
     llm_api_key: Optional[str] = None
     llm_model: Optional[str] = None
     graph: str = "refactor"
-    # speed mode: "fast" (cheaper/faster) or "thorough" (full quality)
-    mode: str = "fast"
 
 
 class SessionResponse(BaseModel):
@@ -23,7 +21,6 @@ class SessionResponse(BaseModel):
     created_at: str
     llm_provider: str = "nvidia"
     llm_model: Optional[str] = None
-    mode: str = "fast"
 
 
 class SessionStateResponse(BaseModel):
@@ -36,4 +33,3 @@ class SessionStateResponse(BaseModel):
     status: str
     llm_provider: str = "nvidia"
     llm_model: Optional[str] = None
-    mode: str = "fast"

@@ -268,40 +268,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
       }
-    }, []);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch {
-      // fallback
-    }
-  }, [content]);
-
-  const handleRegenerate = useCallback(() => {
-    onRegenerate?.(index);
-  }, [index, onRegenerate]);
-
-  const handleFeedback = useCallback((feedback: "helpful" | "not_helpful") => {
-    onFeedback?.(index, feedback);
-  }, [index, onFeedback]);
-
-  const showActionsDelayed = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = undefined;
-    }
-    setShowActions(true);
-  }, []);
-
-  const hideActionsDelayed = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-    }
-    hideTimerRef.current = setTimeout(() => {
-      setShowActions(false);
-      hideTimerRef.current = undefined;
-    }, 150);
+    };
   }, []);
 
   if (isThinking) {

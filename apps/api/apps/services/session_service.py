@@ -29,7 +29,6 @@ def create_session(
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
     workspace_root: Optional[str] = None,
-    mode: str = "fast",
 ) -> dict:
     session_id = str(uuid.uuid4())
 
@@ -43,7 +42,6 @@ def create_session(
         "llm_provider": llm_provider,
         "llm_api_key": llm_api_key,
         "llm_model": llm_model,
-        "mode": (mode or "fast").lower(),
         "agent_state": {
             "original_code": code,
             "review_notes": "",

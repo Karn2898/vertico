@@ -87,10 +87,8 @@ export class ApiClient {
   }
 
   async indexRepo(workspaceRoot: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/index`, {
+    const res = await fetch(`${this.baseUrl}/agent/index?repo_path=${encodeURIComponent(workspaceRoot)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: workspaceRoot }),
     });
     if (!res.ok) throw new Error(`indexRepo failed: ${res.statusText}`);
   }

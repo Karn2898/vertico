@@ -60,6 +60,7 @@ export default function App() {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
 
   const cancelRef = useRef<(() => void) | null>(null);
+  const lastModelRef = useRef<string>("");
 
   const fetchSessions = async () => {
     try {
@@ -106,6 +107,7 @@ export default function App() {
   };
 
   const sendMessage = async (text: string, model: string = "") => {
+    if (model) lastModelRef.current = model;
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     // Create session with first user message as name if no session exists
     const sid = await ensureSession(sessionId ? undefined : text.slice(0, 50));
@@ -331,7 +333,7 @@ export default function App() {
       // Remove messages after the user message
       const userIdx = messages.lastIndexOf(lastUserMsg);
       setMessages(prev => prev.slice(0, userIdx + 1));
-      sendMessage(lastUserMsg.content);
+      sendMessage(lastUserMsg.content, lastModelRef.current);
     }
   }, [messages, sendMessage]);
 

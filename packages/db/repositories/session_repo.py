@@ -19,7 +19,6 @@ class SessionRepo:
         llm_provider: str = "nvidia",
         llm_api_key: Optional[str] = None,
         llm_model: Optional[str] = None,
-        mode: str = "fast",
     ) -> SessionModel:
         db_session = SessionModel(
             filename=filename,
@@ -29,7 +28,6 @@ class SessionRepo:
             llm_provider=llm_provider,
             llm_api_key=llm_api_key,
             llm_model=llm_model,
-            mode=mode,
             created_at=datetime.utcnow(),
         )
         self.session.add(db_session)

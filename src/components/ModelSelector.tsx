@@ -79,7 +79,11 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setOpen(o => !o)}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(o => !o);
+        }}
         title={`Model: ${current?.label ?? currentModel} (${current?.description ?? ""})`}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -100,7 +104,7 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
       {open && (
         <ul
           role="listbox"
-          className="absolute bottom-full left-0 mb-1 w-52 z-50 bg-[#211a18] border border-border rounded-lg shadow-lg overflow-hidden py-0.5"
+          className="absolute bottom-full left-0 mb-1 w-52 bg-[#211a18] border border-border rounded-lg shadow-lg overflow-hidden py-0.5 model-dropdown"
         >
           {models.map(m => (
             <li key={m.id} role="option" aria-selected={m.id === currentModel}>

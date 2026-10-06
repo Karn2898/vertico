@@ -23,7 +23,7 @@ enc = _init_encoder()
 
 def token_count(text: str) -> int:
     if enc is not None:
-        return len(enc.encode(text))
+        return len(enc.encode(text, disallowed_special=()))
     # fallback: approximate by words
     return max(1, len(text.split()))
 

@@ -23,7 +23,7 @@ except Exception:
     graphs = importlib.import_module("agent_core.graphs")
 
 try:
-    from rag.indexers.repo_indexer import index_repo
+    from indexers.repo_indexer import index_repo
 except Exception:  # pragma: no cover - rag package not installed
     index_repo = None
 

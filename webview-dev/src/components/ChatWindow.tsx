@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
+// Composer: single card with textarea, model selector + send/stop inside it.
 import { MessageBubble } from "@src/components/MessageBubble";
 import { AgentMessage } from "@src/components/AgentMessage";
 import { ModelSelector } from "@src/components/ModelSelector";
@@ -14,7 +15,7 @@ interface Props {
 }
 
 export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }: Props) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [model, setModel] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -49,6 +50,14 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
     }
   }, [handleSend]);
 
+  // Auto-grow textarea, clamped to the composer height.
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }, []);
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Messages */}
@@ -78,35 +87,44 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
         <div ref={bottomRef} />
       </div>
 
-      {/* input */}
-      <div className="border-t border-border flex-shrink-0">
-        <div className="p-3">
-          <input
+      {/* composer: textarea + model selector + send/stop, all inside one box */}
+      <div className="composer-shell flex-shrink-0 p-3 pt-2">
+        <div className="composer">
+          <textarea
             ref={inputRef}
-            className="w-full bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
+            rows={1}
+            className="composer-input"
             onKeyDown={handleKeyDown}
+            onInput={autoResize}
             placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
           />
-        </div>
-        <div className="px-3 pb-3 flex items-center gap-2 border-t border-border">
-          <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
-          <div className="flex-1" />
-          {streaming ? (
-            <button
-              onClick={onCancel}
-              title="Stop generating"
-              className="bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
-            >
-              ■ Stop
-            </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              className="bg-[#6e2a3a] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0"
-            >
-              Send
-            </button>
-          )}
+          <div className="composer-toolbar">
+            <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
+            <div className="flex-1" />
+            {streaming ? (
+              <button
+                onClick={onCancel}
+                title="Stop generating"
+                aria-label="Stop generating"
+                className="composer-btn composer-btn-stop"
+              >
+                <span className="composer-stop-icon" aria-hidden />
+                Stop
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                title="Send (Enter)"
+                aria-label="Send message"
+                className="composer-btn composer-btn-send"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d="M2 8l12-6-4.5 6L14 14 2 8z" fill="currentColor" stroke="currentColor" strokeWidth="0.5" strokeLinejoin="round" />
+                </svg>
+                Send
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

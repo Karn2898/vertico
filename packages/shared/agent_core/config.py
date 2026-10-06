@@ -5,20 +5,6 @@ from langchain_openai import ChatOpenAI
 
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY")
 
-# Speed-mode model mapping (Gemini).
-# "fast"  -> cheaper/faster model, used for quick answers.
-# "thorough" -> higher-quality model, used for full reasoning.
-GEMINI_MODELS_BY_MODE = {
-    "fast": "gemini-2.0-flash-lite",
-    "thorough": "gemini-2.5-pro",
-}
-
-
-def get_gemini_model_for_mode(mode: Optional[str]) -> str:
-    """Map a speed mode ('fast' | 'thorough') to a Gemini model.
-    Unknown/missing modes default to the fast model."""
-    return GEMINI_MODELS_BY_MODE.get((mode or "fast").lower(), GEMINI_MODELS_BY_MODE["fast"])
-
 
 class _OpenAICompatibleLLM(ChatOpenAI):
     """LangChain-compatible wrapper around any OpenAI-compatible API (NVIDIA, OpenAI, DeepSeek)."""
@@ -107,8 +93,6 @@ _PROVIDERS = {
     },
     "gemini": {
         "model": "gemini-2.0-flash",
-        # per-mode defaults (speed selector); explicit llm_model still wins
-        "models": GEMINI_MODELS_BY_MODE,
         "requires_key": True,
     },
     "claude": {
@@ -127,7 +111,6 @@ def get_llm(
     provider: str = "nvidia",
     api_key: Optional[str] = None,
     model: Optional[str] = None,
-    mode: Optional[str] = None,
 ):
     """Return an LLM instance for the requested provider."""
     provider = provider.lower()
@@ -175,4 +158,16 @@ def get_default_provider() -> str:
     return "nvidia"
 
 
-llm = get_llm()
+def _try_default_llm():
+    """Best-effort default LLM. Never crash import — the API must start even
+    when no API key is configured yet; requests that need a key will surface
+    the error at call time instead."""
+    try:
+        return get_llm()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("default LLM unavailable: %s", exc)
+        return None
+
+
+llm = _try_default_llm()

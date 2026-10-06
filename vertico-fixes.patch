@@ -1,0 +1,330 @@
+diff --git a/apps/api/apps/ide-extension/extension.ts b/apps/api/apps/ide-extension/extension.ts
+index b7b081b..24de33c 100644
+--- a/apps/api/apps/ide-extension/extension.ts
++++ b/apps/api/apps/ide-extension/extension.ts
+@@ -46,45 +46,71 @@ export function activate(context: vscode.ExtensionContext) {
+ 
+   vscode.commands.registerCommand("vertico.refactorFile", async () => {
+     const editor = vscode.window.activeTextEditor;
+-    if (!editor) return;
++    if (!editor) {
++      vscode.window.showWarningMessage("Vertico: open a file before running Refactor.");
++      return;
++    }
+     const code = editor.document.getText();
+     const filename = editor.document.fileName;
+ 
+-    await vscode.window.withProgress(
+-      { location: vscode.ProgressLocation.Notification, title: "Vertico: creating session.." },
+-      async () => {
+-        const workspaceRoot = getWorkspaceRoot();
+-        const session = await sessionManager.createSession(filename, code, workspaceRoot);
+-        chatPanel.reveal();
+-        await sessionManager.runGraph(session.session_id, "refactor");
+-      }
+-    );
++    try {
++      await vscode.window.withProgress(
++        { location: vscode.ProgressLocation.Notification, title: "Vertico: creating session..", cancellable: false },
++        async (progress) => {
++          const workspaceRoot = getWorkspaceRoot();
++          const session = await sessionManager.createSession(filename, code, workspaceRoot);
++          chatPanel.reveal();
++          progress.report({ message: "Running refactor…" });
++          await sessionManager.runGraph(session.session_id, "refactor");
++        }
++      );
++    } catch (err: any) {
++      const message = err?.message || String(err);
++      console.error("[Vertico] refactorFile failed:", err);
++      vscode.window.showErrorMessage(`Vertico: Refactor failed — ${message}`);
++    }
+   });
+ 
+ 
+ 
+   vscode.commands.registerCommand("Vertico.reviewFile", async () => {
+     const editor = vscode.window.activeTextEditor;
+-    if (!editor) return;
+-    const code = editor.document.getText();
+-    const filename = editor.document.fileName;
+-    const workspaceRoot = getWorkspaceRoot();
+-    const session = await sessionManager.createSession(filename, code, workspaceRoot);
+-    chatPanel.reveal();
+-    await sessionManager.runGraph(session.session_id, "review");
++    if (!editor) {
++      vscode.window.showWarningMessage("Vertico: open a file before running Review.");
++      return;
++    }
++    try {
++      const code = editor.document.getText();
++      const filename = editor.document.fileName;
++      const workspaceRoot = getWorkspaceRoot();
++      const session = await sessionManager.createSession(filename, code, workspaceRoot);
++      chatPanel.reveal();
++      await sessionManager.runGraph(session.session_id, "review");
++    } catch (err: any) {
++      console.error("[Vertico] reviewFile failed:", err);
++      vscode.window.showErrorMessage(`Vertico: Review failed — ${err?.message || String(err)}`);
++    }
+   });
+ 
+   vscode.commands.registerCommand("Vertico.fixbug", async () => {
+     const editor = vscode.window.activeTextEditor;
+-    if (!editor) return;
++    if (!editor) {
++      vscode.window.showWarningMessage("Vertico: open a file before running Fix Bug.");
++      return;
++    }
+     const errorMsg = await vscode.window.showInputBox({ prompt: "Describe the bug you want to fix" });
+     if (!errorMsg) return;
+-    const code = editor.document.getText();
+-    const filename = editor.document.fileName;
+-    const workspaceRoot = getWorkspaceRoot();
+-    const session = await sessionManager.createSession(filename, code, workspaceRoot);
+-    chatPanel.reveal();
+-    await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
++    try {
++      const code = editor.document.getText();
++      const filename = editor.document.fileName;
++      const workspaceRoot = getWorkspaceRoot();
++      const session = await sessionManager.createSession(filename, code, workspaceRoot);
++      chatPanel.reveal();
++      await sessionManager.runGraph(session.session_id, "bugfix", errorMsg);
++    } catch (err: any) {
++      console.error("[Vertico] fixbug failed:", err);
++      vscode.window.showErrorMessage(`Vertico: Fix Bug failed — ${err?.message || String(err)}`);
++    }
+   });
+ 
+   vscode.commands.registerCommand("vertico.indexRepo", async () => {
+diff --git a/src/components/AgentMessage.tsx b/src/components/AgentMessage.tsx
+index 1d27bdc..f4c36c8 100644
+--- a/src/components/AgentMessage.tsx
++++ b/src/components/AgentMessage.tsx
+@@ -215,40 +215,6 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
+   const isThinking = message?.streaming && !message?.content?.trim();
+   const content = message?.content || "";
+ 
+-  const handleCopy = useCallback(async () => {
+-    try {
+-      await navigator.clipboard.writeText(content);
+-    } catch {
+-      // fallback
+-    }
+-  }, [content]);
+-
+-  const handleRegenerate = useCallback(() => {
+-    onRegenerate?.(index);
+-  }, [index, onRegenerate]);
+-
+-  const handleFeedback = useCallback((feedback: "helpful" | "not_helpful") => {
+-    onFeedback?.(index, feedback);
+-  }, [index, onFeedback]);
+-
+-  const showActionsDelayed = useCallback(() => {
+-    if (hideTimerRef.current) {
+-      clearTimeout(hideTimerRef.current);
+-      hideTimerRef.current = undefined;
+-    }
+-    setShowActions(true);
+-  }, []);
+-
+-  const hideActionsDelayed = useCallback(() => {
+-    if (hideTimerRef.current) {
+-      clearTimeout(hideTimerRef.current);
+-    }
+-    hideTimerRef.current = setTimeout(() => {
+-      setShowActions(false);
+-      hideTimerRef.current = undefined;
+-    }, 150);
+-  }, []);
+-
+   useEffect(() => {
+     // Entrance animation
+     requestAnimationFrame(() => {
+@@ -268,7 +234,8 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
+       if (hideTimerRef.current) {
+         clearTimeout(hideTimerRef.current);
+       }
+-    }, []);
++    };
++  }, []);
+ 
+   const handleCopy = useCallback(async () => {
+     try {
+diff --git a/src/components/ChatWindow.tsx b/src/components/ChatWindow.tsx
+index 14ffc4e..c99dacb 100644
+--- a/src/components/ChatWindow.tsx
++++ b/src/components/ChatWindow.tsx
+@@ -1,20 +1,23 @@
+ import { useRef, useEffect, useCallback, useState } from "react";
+ import { MessageBubble } from "@src/components/MessageBubble";
+ import { AgentMessage } from "@src/components/AgentMessage";
+-import { ModeSelector, ChatMode } from "@src/components/ModeSelector";
++import { ModelSelector } from "@src/components/ModelSelector";
+ 
+ interface Props {
+   messages: any[];
+   streaming: boolean;
+-  onSend: (text: string, mode: ChatMode) => void;
++  onSend: (text: string, model: string) => void;
+   onCancel?: () => void;
+   onRegenerate?: (messageIndex: number) => void;
+   onFeedback?: (messageIndex: number, feedback: "helpful" | "not_helpful") => void;
++  apiUrl: string;
+ }
+ 
+-export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback }: Props) {
+-  const inputRef = useRef<HTMLInputElement | null>(null);
+-  const [mode, setMode] = useState<ChatMode>("fast");
++const MAX_TEXTAREA_HEIGHT = 200; // px — box grows with content up to this, then scrolls
++
++export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }: Props) {
++  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
++  const [model, setModel] = useState("");
+   const bottomRef = useRef<HTMLDivElement | null>(null);
+   const scrollRef = useRef<HTMLDivElement | null>(null);
+   const stickToBottomRef = useRef<boolean>(true);
+@@ -33,13 +36,23 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
+     stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+   }, []);
+ 
++  const autoResize = useCallback(() => {
++    const el = textareaRef.current;
++    if (!el) return;
++    el.style.height = "auto";
++    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
++  }, []);
++
+   const handleSend = useCallback(() => {
+-    const text = inputRef.current?.value.trim();
++    const text = textareaRef.current?.value.trim();
+     if (!text || streaming) return;
+-    onSend(text, mode);
+-    if (inputRef.current) inputRef.current.value = "";
++    onSend(text, model);
++    if (textareaRef.current) {
++      textareaRef.current.value = "";
++      textareaRef.current.style.height = "auto";
++    }
+     stickToBottomRef.current = true;
+-  }, [streaming, onSend, mode]);
++  }, [streaming, onSend, model]);
+ 
+   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+     if (e.key === "Enter" && !e.shiftKey) {
+@@ -77,31 +90,39 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
+         <div ref={bottomRef} />
+       </div>
+ 
+-      {/* input */}
+-      <div className="p-3 border-t border-border flex gap-2 flex-shrink-0">
+-        <ModeSelector value={mode} onChange={setMode} disabled={streaming} />
+-        <input
+-          ref={inputRef}
+-          className="flex-1 bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
+-          onKeyDown={handleKeyDown}
+-          placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
+-        />
+-        {streaming ? (
+-          <button
+-            onClick={onCancel}
+-            title="Stop generating"
+-            className="bg-[#2b2b2b] text-[#f1e4d9] px-4 py-2 rounded-lg text-sm hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
+-          >
+-            ■ Stop
+-          </button>
+-        ) : (
+-          <button
+-            onClick={handleSend}
+-            className="bg-[#6e2a3a] text-[#f1e4d9] px-4 py-2 rounded-lg text-sm hover:bg-[#7d3244] transition-colors flex-shrink-0"
+-          >
+-            Send
+-          </button>
+-        )}
++      {/* input: a single bordered composer box — textarea on top, model selector + send in a footer row */}
++      <div className="p-3 border-t border-border flex-shrink-0">
++        <div className="bg-[#1b1513] border border-border rounded-lg focus-within:border-[#b8935a] focus-within:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors">
++          <textarea
++            ref={textareaRef}
++            rows={1}
++            className="w-full bg-transparent px-3 pt-3 pb-2 text-sm outline-none resize-none placeholder:text-[#6b5f58]"
++            style={{ maxHeight: MAX_TEXTAREA_HEIGHT }}
++            onKeyDown={handleKeyDown}
++            onInput={autoResize}
++            placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
++          />
++          <div className="flex items-center gap-2 px-2 pb-2">
++            <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
++            <div className="flex-1" />
++            {streaming ? (
++              <button
++                onClick={onCancel}
++                title="Stop generating"
++                className="bg-[#2b2b2b] text-[#f1e4d9] px-4 py-1.5 rounded-lg text-sm hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
++              >
++                ■ Stop
++              </button>
++            ) : (
++              <button
++                onClick={handleSend}
++                className="bg-[#6e2a3a] text-[#f1e4d9] px-4 py-1.5 rounded-lg text-sm hover:bg-[#7d3244] transition-colors flex-shrink-0"
++              >
++                Send
++              </button>
++            )}
++          </div>
++        </div>
+       </div>
+     </div>
+   );
+diff --git a/src/services/SessionManager.ts b/src/services/SessionManager.ts
+index b6ca8fd..2c83821 100644
+--- a/src/services/SessionManager.ts
++++ b/src/services/SessionManager.ts
+@@ -17,26 +17,40 @@ export class SessionManager {
+   async runGraph(
+     sessionId: string,
+     graph: "refactor" | "bugfix" | "review",
+-    errorMessage?: string
++    errorMessage?: string,
++    timeoutMs: number = 180_000
+   ): Promise<void> {
+     const { task_id } = await this.api.runAgent(sessionId, graph, errorMessage);
++    const startedAt = Date.now();
+     return new Promise((resolve, reject) => {
+       const interval = setInterval(async () => {
+         try {
+           const status = await this.api.getTaskStatus(task_id);
+-          // accept several possible shapes for completion
++          // Backend (apps/api/apps/routes/agent.py) wraps Celery's AsyncResult and
++          // returns its *real* state strings: PENDING, STARTED, RETRY, SUCCESS, FAILURE.
++          // accept several possible shapes for completion, Celery's included
+           if (
+             status === "completed" ||
+             status?.state === "COMPLETED" ||
++            status?.state === "SUCCESS" ||
+             status?.status === "completed"
+           ) {
+             clearInterval(interval);
+             resolve();
+             return;
+           }
+-          if (status?.state === "FAILURE" || status?.status === "failed") {
++          if (
++            status?.state === "FAILURE" ||
++            status?.state === "REVOKED" ||
++            status?.status === "failed"
++          ) {
++            clearInterval(interval);
++            reject(new Error(status?.traceback || status?.result || status?.errors || "task failed"));
++            return;
++          }
++          if (Date.now() - startedAt > timeoutMs) {
+             clearInterval(interval);
+-            reject(new Error(status?.result || status?.errors || "task failed"));
++            reject(new Error(`Task ${task_id} timed out after ${timeoutMs}ms (last state: ${status?.state ?? "unknown"}). Is the Celery worker running?`));
+             return;
+           }
+         } catch (err) {

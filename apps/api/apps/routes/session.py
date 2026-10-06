@@ -29,7 +29,6 @@ def create(req: CreateSessionRequest):
         llm_api_key=req.llm_api_key,
         llm_model=req.llm_model,
         workspace_root=req.workspace_root,
-        mode=req.mode,
     )
     return _to_response(session)
 
@@ -85,5 +84,4 @@ def _to_response(session: dict) -> SessionResponse:
         created_at=session["created_at"],
         llm_provider=session.get("llm_provider", "nvidia"),
         llm_model=session.get("llm_model"),
-        mode=session.get("mode", "fast"),
     )

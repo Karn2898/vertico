@@ -8,7 +8,15 @@ DATABASE_URL = os.environ.get(
     "postgresql://tom:vertoco123@localhost:5432/vertico"
 )
 
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=60,
+    pool_size=2,
+    max_overflow=0,
+    connect_args={"keepalives": 1, "keepalives_idle": 30, "keepalives_interval": 10, "keepalives_count": 5},
+)
 
 
 def get_session():

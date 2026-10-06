@@ -56,6 +56,10 @@ export class ChatPanel implements vscode.WebviewViewProvider {
       return;
     }
 
+    // Collect workspace context to send with the message
+    const context = this.contextCollector.collect();
+    const contextFiles = context ? [context.filename] : [];
+
     this.api.streamChat(sessionId, text, {
       onMessage: (data: any) => {
         this._postToWebview({ type: "streamChunk", ...data });
@@ -63,7 +67,7 @@ export class ChatPanel implements vscode.WebviewViewProvider {
       onError: () => {
         this._postToWebview({ type: "streamEnd" });
       },
-    });
+    }, contextFiles);
   }
 
   private async _handleAcceptDiff() {
