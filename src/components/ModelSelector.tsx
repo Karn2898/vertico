@@ -104,7 +104,7 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
       {open && (
         <ul
           role="listbox"
-          className="absolute bottom-full left-0 mb-1 w-52 bg-[#211a18] border border-border rounded-lg shadow-lg overflow-hidden py-0.5 model-dropdown"
+          className="absolute bottom-full left-0 mb-1 w-52 max-h-64 overflow-y-auto overscroll-contain bg-[#211a18] border border-border rounded-lg shadow-lg py-0.5 model-dropdown"
         >
           {models.map(m => (
             <li key={m.id} role="option" aria-selected={m.id === currentModel}>
