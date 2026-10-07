@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }: Props) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const [model, setModel] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -81,32 +81,34 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
       {/* input */}
       <div className="border-t border-border flex-shrink-0">
         <div className="p-3">
-          <input
-            ref={inputRef}
-            className="w-full bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]"
-            onKeyDown={handleKeyDown}
-            placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
-          />
-        </div>
-        <div className="px-3 pb-3 flex items-center gap-2 border-t border-border">
-          <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
-          <div className="flex-1" />
-          {streaming ? (
-            <button
-              onClick={onCancel}
-              title="Stop generating"
-              className="bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
-            >
-              ■ Stop
-            </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              className="bg-[#6e2a3a] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0"
-            >
-              Send
-            </button>
-          )}
+          <div className="relative flex items-end bg-[#1b1513] border border-border rounded-lg focus-within:border-[#b8935a] focus-within:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors">
+            <textarea
+              ref={inputRef}
+              rows={4}
+              className="w-full bg-transparent rounded-lg px-3 pt-2.5 pb-8 text-xs leading-relaxed outline-none resize-y min-h-[96px] placeholder:text-[#6b5f58]"
+              onKeyDown={handleKeyDown}
+              placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
+            />
+            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1.5">
+              <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
+              {streaming ? (
+                <button
+                  onClick={onCancel}
+                  title="Stop generating"
+                  className="bg-[#2b2b2b] text-[#f1e4d9] px-2.5 py-1 rounded-md text-[11px] hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
+                >
+                  ■ Stop
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  className="bg-[#6e2a3a] text-[#f1e4d9] px-2.5 py-1 rounded-md text-[11px] hover:bg-[#7d3244] transition-colors flex-shrink-0"
+                >
+                  Send
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
