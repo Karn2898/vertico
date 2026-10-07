@@ -3,6 +3,8 @@ import { MessageBubble } from "@src/components/MessageBubble";
 import { AgentMessage } from "@src/components/AgentMessage";
 import { ModelSelector } from "@src/components/ModelSelector";
 
+const MAX_TEXTAREA_HEIGHT = 200; // px — box grows with content up to this, then scrolls
+
 interface Props {
   messages: any[];
   streaming: boolean;
@@ -38,7 +40,10 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
     const text = inputRef.current?.value.trim();
     if (!text || streaming) return;
     onSend(text, model);
-    if (inputRef.current) inputRef.current.value = "";
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.style.height = "auto";
+    }
     stickToBottomRef.current = true;
   }, [streaming, onSend, model]);
 
@@ -48,6 +53,14 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
       handleSend();
     }
   }, [handleSend]);
+
+  // Auto-grow textarea, clamped to MAX_TEXTAREA_HEIGHT.
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+  }, []);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -81,28 +94,30 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
       {/* input */}
       <div className="border-t border-border flex-shrink-0">
         <div className="p-3">
-          <div className="relative flex items-end bg-[#1b1513] border border-border rounded-lg focus-within:border-[#b8935a] focus-within:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors">
+          <div className="bg-[#1b1513] border border-border rounded-lg focus-within:border-[#b8935a] focus-within:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors">
             <textarea
               ref={inputRef}
-              rows={4}
-              className="w-full bg-transparent rounded-lg px-3 pt-2.5 pb-8 text-xs leading-relaxed outline-none resize-y min-h-[96px] placeholder:text-[#6b5f58]"
+              rows={3}
+              className="w-full bg-transparent rounded-lg px-3 pt-2.5 pb-1 text-sm leading-relaxed outline-none resize-none placeholder:text-[#6b5f58] min-h-[80px]"
+              style={{ maxHeight: MAX_TEXTAREA_HEIGHT }}
               onKeyDown={handleKeyDown}
+              onInput={autoResize}
               placeholder={streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..."}
             />
-            <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1.5">
+            <div className="flex items-center justify-between gap-2 px-2 pb-2">
               <ModelSelector onChange={setModel} disabled={streaming} apiUrl={apiUrl} />
               {streaming ? (
                 <button
                   onClick={onCancel}
                   title="Stop generating"
-                  className="bg-[#2b2b2b] text-[#f1e4d9] px-2.5 py-1 rounded-md text-[11px] hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
+                  className="bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-md text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
                 >
                   ■ Stop
                 </button>
               ) : (
                 <button
                   onClick={handleSend}
-                  className="bg-[#6e2a3a] text-[#f1e4d9] px-2.5 py-1 rounded-md text-[11px] hover:bg-[#7d3244] transition-colors flex-shrink-0"
+                  className="bg-[#6e2a3a] text-[#f1e4d9] px-4 py-1.5 rounded-md text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0"
                 >
                   Send
                 </button>

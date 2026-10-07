@@ -72,7 +72,7 @@ class _ClaudeLLM:
 _PROVIDERS = {
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "model": "deepseek-ai/deepseek-v4.1-flash",
         "models": {
             "nemotron-3.5-lightning": "nvidia/nemotron-3.5-lightning-30b-a3b",
             "deepseek-v4.1-flash": "deepseek-ai/deepseek-v4.1-flash",

@@ -210,7 +210,7 @@ export function AgentMessage({ message, index, messages, streaming, onRegenerate
   const actionsRef = useRef<HTMLDivElement>(null);
   const [showActions, setShowActions] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isSameTurn = isSameTurnAsPrevious(messages, index);
   const isThinking = message?.streaming && !message?.content?.trim();
   const content = message?.content || "";
