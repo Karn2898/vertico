@@ -83,7 +83,6 @@ _PROVIDERS = {
         "requires_key": False,
         "extra_body": {
             "chat_template_kwargs": {"enable_thinking": True},
-            "reasoning_budget": 16384,
         },
     },
     "openai": {
