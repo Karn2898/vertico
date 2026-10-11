@@ -21,7 +21,7 @@ def init_embedder():
     if _genai_configured:
         return
     if HAS_GENAI:
-        api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("NVIDIA_API_KEY")
+        api_key = os.environ.get("GOOGLE_API_KEY")  # Only use Google if GOOGLE_API_KEY explicitly set
         if api_key:
             try:
                 genai.configure(api_key=api_key)
