@@ -67,7 +67,12 @@ def index_repository(repo_path: str, force: bool = False):
     if index_repo is None:
         raise HTTPException(status_code=501, detail="RAG package not installed; repo indexing is unavailable")
     try:
+        import os
+        print(f"[DEBUG] DATABASE_URL in agent route: {os.environ.get('DATABASE_URL', 'NOT SET')}")
+        from db.database import engine
+        print(f"[DEBUG] Engine URL: {engine.url}")
         result = index_repo(repo_path, force_reindex=force)
+        print(f"[DEBUG] Index result: {result}")
         return {"status": "indexed", **result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
