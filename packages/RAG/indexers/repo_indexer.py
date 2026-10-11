@@ -25,6 +25,9 @@ SKIP_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv",
     "venv", "dist", "build", ".mypy_cache", ".pytest_cache",
     "migrations", "indexes", "traces",
+    "Lib", "site-packages", ".tox", ".nox",
+    "env", ".env", "virtualenv", "venvs",
+    "eggs", "wheels", ".eggs",
 }
 
 
