@@ -1698,6 +1698,7 @@ textarea {
   );
   border: 1px solid rgba(184, 147, 90, 0.25) !important;
   background: rgba(20, 16, 15, 0.8) !important;
+  color: var(--fg) !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 input:focus,
@@ -2192,16 +2193,122 @@ header .font-bold:hover {
   display: inline-block;
 }
 
-/* Model selector dropdown â€” render above everything, never clipped */
+/* Model selector dropdown — render above everything, never clipped */
 .model-dropdown {
   z-index: 1000;
   position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 6px;
+  width: 224px; /* w-56 = 14rem = 224px */
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(184, 147, 90, 0.15);
+  padding: 4px 0;
+  list-style: none;
+  margin-bottom: 6px;
+}
+
+/* Model dropdown items */
+.model-dropdown li {
+  padding: 0;
+  margin: 0;
+}
+
+.model-dropdown button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 0.1s;
+  text-align: left;
+}
+
+.model-dropdown button:hover {
+  background: var(--surface-hover);
+}
+
+.model-dropdown button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--primary), 0 0 8px var(--gold-glow);
+}
+
+.model-dropdown .model-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-dropdown .model-description {
+  display: block;
+  font-size: 0.625rem;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+.model-dropdown .model-selected {
+  color: var(--primary);
 }
 
 /* ancestors must not clip the dropdown */
 .composer,
 .composer-toolbar,
 .composer-shell,
-.relative.flex-shrink-0 {
+.model-selector {
   overflow: visible;
+}
+
+/* Model selector trigger */
+.model-selector {
+  position: relative;
+}
+
+.model-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.model-trigger:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+
+.model-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.model-trigger .model-icon {
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  transition: transform 0.15s;
+}
+
+.model-trigger.open .model-icon {
+  transform: rotate(180deg);
 }

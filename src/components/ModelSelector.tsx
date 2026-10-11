@@ -75,7 +75,7 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
   };
 
   return (
-    <div ref={rootRef} className="relative flex-shrink-0">
+    <div ref={rootRef} className="model-selector relative flex-shrink-0">
       <button
         type="button"
         disabled={disabled}
@@ -87,7 +87,7 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
         title={`Model: ${current?.label ?? currentModel} (${current?.description ?? ""})`}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-1 border border-border rounded-full px-2 py-1 text-xs text-[#d8c9bd] hover:bg-[#2b2320] transition-colors disabled:opacity-50 whitespace-nowrap min-w-[100px]"
+        className="model-trigger flex items-center gap-1 border border-border rounded-full px-2 py-1 text-xs text-[#d8c9bd] hover:bg-[#2b2320] transition-colors disabled:opacity-50 whitespace-nowrap min-w-[100px]"
       >
         <span className="flex-1 text-left truncate">{current?.label ?? currentModel}</span>
         <svg
@@ -104,7 +104,7 @@ export function ModelSelector({ onChange, disabled, apiUrl }: Props) {
       {open && (
         <ul
           role="listbox"
-          className="absolute bottom-full left-0 mb-1 w-52 max-h-64 overflow-y-auto overscroll-contain bg-[#211a18] border border-border rounded-lg shadow-lg py-0.5 model-dropdown"
+          className="model-dropdown absolute bottom-full left-0 mb-2 w-56 max-h-[260px] overflow-y-auto bg-[#211a18] border border-border rounded-lg shadow-lg py-1 z-1000"
         >
           {models.map(m => (
             <li key={m.id} role="option" aria-selected={m.id === currentModel}>
