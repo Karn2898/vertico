@@ -22,10 +22,23 @@ except Exception:
     sys.path.append(str(shared_path))
     graphs = importlib.import_module("agent_core.graphs")
 
-try:
-    from indexers.repo_indexer import index_repo
-except Exception:  # pragma: no cover - rag package not installed
-    index_repo = None
+# Lazy indexer import to avoid module-load-time failures
+index_repo = None
+def _get_indexer():
+    global index_repo
+    if index_repo is None:
+        # Ensure RAG package directory is on sys.path
+        repo_root = Path(__file__).resolve().parents[4]
+        rag_path = repo_root / "packages" / "RAG"
+        if str(rag_path) not in sys.path:
+            sys.path.insert(0, str(rag_path))
+        try:
+            _indexer_module = importlib.import_module("indexers.repo_indexer")
+            index_repo = _indexer_module.index_repo
+        except Exception as e:
+            print(f"[DEBUG] Failed to import indexer: {e}")
+            index_repo = None
+    return index_repo
 
 # Celery task entrypoints
 try:
@@ -64,14 +77,15 @@ def index_repository(repo_path: str, force: bool = False):
     Index a repo into pgvector.
     Call this before running the agent on any new codebase.
     """
-    if index_repo is None:
+    indexer = _get_indexer()
+    if indexer is None:
         raise HTTPException(status_code=501, detail="RAG package not installed; repo indexing is unavailable")
     try:
         import os
         print(f"[DEBUG] DATABASE_URL in agent route: {os.environ.get('DATABASE_URL', 'NOT SET')}")
         from db.database import engine
         print(f"[DEBUG] Engine URL: {engine.url}")
-        result = index_repo(repo_path, force_reindex=force)
+        result = indexer(repo_path, force_reindex=force)
         print(f"[DEBUG] Index result: {result}")
         return {"status": "indexed", **result}
     except ValueError as e:
