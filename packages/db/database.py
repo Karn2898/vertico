@@ -13,9 +13,16 @@ engine = create_engine(
     echo=False,
     pool_pre_ping=True,
     pool_recycle=60,
+    pool_timeout=5,
     pool_size=10,
     max_overflow=20,
-    connect_args={"keepalives": 1, "keepalives_idle": 30, "keepalives_interval": 10, "keepalives_count": 5},
+    connect_args={
+        "connect_timeout": 5,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    },
 )
 
 

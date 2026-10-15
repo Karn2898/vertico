@@ -1,0 +1,11 @@
+[DEBUG] DATABASE_URL in agent route: postgresql://postgres.vgzveoeocegtnhnsbcda:whit04edevi10l@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] Engine URL: postgresql://postgres.vgzveoeocegtnhnsbcda:***@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] Index result: {'files': 0, 'chunks': 0, 'skipped': 0}
+INFO:     127.0.0.1:54953 - "POST /agent/index?repo_path=c:%5CUsers%5CDELL%5Cvertico HTTP/1.1" 200 OK
+[DEBUG] DATABASE_URL in agent route: postgresql://postgres.vgzveoeocegtnhnsbcda:whit04edevi10l@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] Engine URL: postgresql://postgres.vgzveoeocegtnhnsbcda:***@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] DATABASE_URL in agent route: postgresql://postgres.vgzveoeocegtnhnsbcda:whit04edevi10l@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] Engine URL: postgresql://postgres.vgzveoeocegtnhnsbcda:***@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+[DEBUG] Index result: {'files': 199, 'chunks': 1146, 'skipped': 18}
+[DEBUG] Index result: {'files': 199, 'chunks': 1146, 'skipped': 18}
+INFO:     127.0.0.1:55166 - "POST /agent/index?repo_path=c:%5CUsers%5CDELL%5Cvertico&force=true HTTP/1.1" 200 OK

@@ -19,6 +19,7 @@ from ..services.session_service import (
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
+@router.post("", response_model=SessionResponse, include_in_schema=False)
 @router.post("/", response_model=SessionResponse)
 def create(req: CreateSessionRequest):
     session = create_session(
@@ -33,6 +34,7 @@ def create(req: CreateSessionRequest):
     return _to_response(session)
 
 
+@router.get("", response_model=list[SessionResponse], include_in_schema=False)
 @router.get("/", response_model=list[SessionResponse])
 def list_all():
     return [_to_response(s) for s in get_all_sessions()]

@@ -1,0 +1,75 @@
+2026-10-12 01:32:46,721 | WARNING | sandbox.executors.python_executor | Running code WITHOUT sandbox — dev mode only
+C:\Users\DELL\vertico\packages\RAG\embedder\RAG_embedders.py:7: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [8096]
+INFO:     Waiting for application startup.
+2026-10-12 01:33:04,754 | INFO | vertico-api | Starting up...
+2026-10-12 01:33:04,798 | INFO | vertico-api | agent graph compiled OK
+2026-10-12 01:33:09,165 | INFO | vertico-api | pgvector enabled ok
+2026-10-12 01:33:10,448 | INFO | vertico-api | DB tables created
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2026-10-12 01:35:28,261 | INFO | indexers.repo_indexer | Repo already indexed: C:\Users\DELL\vertico. Use force_reindex=True to reindex
+2026-10-12 01:35:28,443 | INFO | vertico-api | POST /agent/index 200(4530.3ms)
+2026-10-12 01:39:37,432 | INFO | indexers.repo_indexer | cleared 1146 existing embeddings for C:\Users\DELL\vertico
+2026-10-12 01:40:33,898 | INFO | indexers.repo_indexer | Found 199 files to index in C:\Users\DELL\vertico
+2026-10-12 01:40:36,292 | INFO | indexers.repo_indexer | produced 1146 chunks, embedding now...
+2026-10-12 01:40:36,333 | INFO | indexers.repo_indexer | embedded 50/1146
+2026-10-12 01:40:36,448 | INFO | indexers.repo_indexer | embedded 100/1146
+2026-10-12 01:40:36,567 | INFO | indexers.repo_indexer | embedded 150/1146
+2026-10-12 01:40:36,689 | INFO | indexers.repo_indexer | embedded 200/1146
+2026-10-12 01:40:36,806 | INFO | indexers.repo_indexer | embedded 250/1146
+2026-10-12 01:40:36,922 | INFO | indexers.repo_indexer | embedded 300/1146
+2026-10-12 01:40:37,041 | INFO | indexers.repo_indexer | embedded 350/1146
+2026-10-12 01:40:37,157 | INFO | indexers.repo_indexer | embedded 400/1146
+2026-10-12 01:40:37,274 | INFO | indexers.repo_indexer | embedded 450/1146
+2026-10-12 01:40:37,391 | INFO | indexers.repo_indexer | embedded 500/1146
+2026-10-12 01:40:37,513 | INFO | indexers.repo_indexer | embedded 550/1146
+2026-10-12 01:40:37,642 | INFO | indexers.repo_indexer | embedded 600/1146
+2026-10-12 01:40:37,760 | INFO | indexers.repo_indexer | embedded 650/1146
+2026-10-12 01:40:37,881 | INFO | indexers.repo_indexer | embedded 700/1146
+2026-10-12 01:40:38,005 | INFO | indexers.repo_indexer | embedded 750/1146
+2026-10-12 01:40:38,130 | INFO | indexers.repo_indexer | embedded 800/1146
+2026-10-12 01:40:38,265 | INFO | indexers.repo_indexer | embedded 850/1146
+2026-10-12 01:40:38,381 | INFO | indexers.repo_indexer | embedded 900/1146
+2026-10-12 01:40:38,497 | INFO | indexers.repo_indexer | embedded 950/1146
+2026-10-12 01:40:38,615 | INFO | indexers.repo_indexer | embedded 1000/1146
+2026-10-12 01:40:38,743 | INFO | indexers.repo_indexer | embedded 1050/1146
+2026-10-12 01:40:38,861 | INFO | indexers.repo_indexer | embedded 1100/1146
+2026-10-12 01:40:38,979 | INFO | indexers.repo_indexer | embedded 1146/1146
+2026-10-12 01:41:09,776 | INFO | indexers.repo_indexer | indexed 1146 chunks from 199 files
+2026-10-12 01:41:09,841 | INFO | vertico-api | POST /agent/index 200(319907.61ms)
+2026-10-12 01:41:24,460 | INFO | indexers.repo_indexer | Found 199 files to index in C:\Users\DELL\vertico
+2026-10-12 01:41:25,605 | INFO | indexers.repo_indexer | produced 1146 chunks, embedding now...
+2026-10-12 01:41:25,618 | INFO | indexers.repo_indexer | embedded 50/1146
+2026-10-12 01:41:25,729 | INFO | indexers.repo_indexer | embedded 100/1146
+2026-10-12 01:41:25,846 | INFO | indexers.repo_indexer | embedded 150/1146
+2026-10-12 01:41:25,963 | INFO | indexers.repo_indexer | embedded 200/1146
+2026-10-12 01:41:26,087 | INFO | indexers.repo_indexer | embedded 250/1146
+2026-10-12 01:41:26,201 | INFO | indexers.repo_indexer | embedded 300/1146
+2026-10-12 01:41:26,330 | INFO | indexers.repo_indexer | embedded 350/1146
+2026-10-12 01:41:26,445 | INFO | indexers.repo_indexer | embedded 400/1146
+2026-10-12 01:41:26,564 | INFO | indexers.repo_indexer | embedded 450/1146
+2026-10-12 01:41:26,679 | INFO | indexers.repo_indexer | embedded 500/1146
+2026-10-12 01:41:26,794 | INFO | indexers.repo_indexer | embedded 550/1146
+2026-10-12 01:41:26,908 | INFO | indexers.repo_indexer | embedded 600/1146
+2026-10-12 01:41:27,020 | INFO | indexers.repo_indexer | embedded 650/1146
+2026-10-12 01:41:27,131 | INFO | indexers.repo_indexer | embedded 700/1146
+2026-10-12 01:41:27,244 | INFO | indexers.repo_indexer | embedded 750/1146
+2026-10-12 01:41:27,357 | INFO | indexers.repo_indexer | embedded 800/1146
+2026-10-12 01:41:27,470 | INFO | indexers.repo_indexer | embedded 850/1146
+2026-10-12 01:41:27,593 | INFO | indexers.repo_indexer | embedded 900/1146
+2026-10-12 01:41:27,706 | INFO | indexers.repo_indexer | embedded 950/1146
+2026-10-12 01:41:27,820 | INFO | indexers.repo_indexer | embedded 1000/1146
+2026-10-12 01:41:27,932 | INFO | indexers.repo_indexer | embedded 1050/1146
+2026-10-12 01:41:28,045 | INFO | indexers.repo_indexer | embedded 1100/1146
+2026-10-12 01:41:28,157 | INFO | indexers.repo_indexer | embedded 1146/1146
+2026-10-12 01:41:53,160 | INFO | indexers.repo_indexer | indexed 1146 chunks from 199 files
+2026-10-12 01:41:53,193 | INFO | vertico-api | POST /agent/index 200(49801.75ms)

@@ -187,15 +187,14 @@ export class ApiClient {
           handlers.onError?.();
           return;
         }
-        const reader = res.body!.getReader();
+        if (!res.body) {
+          handlers.onError?.();
+          return;
+        }
+        const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const events = buffer.split("\n\n");
-          buffer = events.pop() ?? "";
+        const processEvents = (events: string[]) => {
           for (const evt of events) {
             const line = evt.trim();
             if (!line.startsWith("data:")) continue;
@@ -207,7 +206,16 @@ export class ApiClient {
               /* ignore malformed */
             }
           }
+        };
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split(/\r?\n\r?\n/);
+          buffer = events.pop() ?? "";
+          processEvents(events);
         }
+        processEvents(buffer ? [buffer] : []);
         handlers.onDone?.();
       } catch {
         if (controller.signal.aborted) {

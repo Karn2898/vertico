@@ -3,6 +3,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { MessageBubble } from "@src/components/MessageBubble";
 import { AgentMessage } from "@src/components/AgentMessage";
 import { ModelSelector } from "@src/components/ModelSelector";
+const MAX_TEXTAREA_HEIGHT = 200; // px — box grows with content up to this, then scrolls
 export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate, onFeedback, apiUrl }) {
     const inputRef = useRef(null);
     const [model, setModel] = useState("");
@@ -27,8 +28,10 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
         if (!text || streaming)
             return;
         onSend(text, model);
-        if (inputRef.current)
+        if (inputRef.current) {
             inputRef.current.value = "";
+            inputRef.current.style.height = "auto";
+        }
         stickToBottomRef.current = true;
     }, [streaming, onSend, model]);
     const handleKeyDown = useCallback((e) => {
@@ -37,6 +40,14 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
             handleSend();
         }
     }, [handleSend]);
+    // Auto-grow textarea, clamped to MAX_TEXTAREA_HEIGHT.
+    const autoResize = useCallback(() => {
+        const el = inputRef.current;
+        if (!el)
+            return;
+        el.style.height = "auto";
+        el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+    }, []);
     return (_jsxs("div", { className: "flex flex-col h-full min-h-0", children: [_jsxs("div", { ref: scrollRef, onScroll: handleScroll, className: "flex-1 overflow-y-auto p-4 min-h-0", children: [messages.length === 0 && (_jsxs("p", { className: "text-muted text-center mt-8", children: ["Open a file and run ", _jsx("strong", { children: "Vertico: Refactor" }), " to start."] })), messages.map((msg, i) => {
                         const isUser = msg?.role === "user";
                         const isSystem = msg?.role === "system";
@@ -47,5 +58,5 @@ export function ChatWindow({ messages, streaming, onSend, onCancel, onRegenerate
                             return (_jsx("div", { className: "message-row system", children: _jsx("div", { className: "bubble-system px-4 py-3 text-sm leading-relaxed max-w-[80%] text-center", children: msg.content }) }, `system-${i}`));
                         }
                         return _jsx(AgentMessage, { message: msg, index: i, messages: messages, streaming: streaming, onRegenerate: onRegenerate, onFeedback: onFeedback }, `assistant-${i}`);
-                    }), _jsx("div", { ref: bottomRef })] }), _jsxs("div", { className: "border-t border-border flex-shrink-0", children: [_jsx("div", { className: "p-3", children: _jsx("input", { ref: inputRef, className: "w-full bg-[#1b1513] border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b8935a] focus:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors placeholder:text-[#6b5f58]", onKeyDown: handleKeyDown, placeholder: streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..." }) }), _jsxs("div", { className: "px-3 pb-3 flex items-center gap-2 border-t border-border", children: [_jsx(ModelSelector, { onChange: setModel, disabled: streaming, apiUrl: apiUrl }), _jsx("div", { className: "flex-1" }), streaming ? (_jsx("button", { onClick: onCancel, title: "Stop generating", className: "bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0", children: "\u25A0 Stop" })) : (_jsx("button", { onClick: handleSend, className: "bg-[#6e2a3a] text-[#f1e4d9] px-3 py-1.5 rounded-lg text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0", children: "Send" }))] })] })] }));
+                    }), _jsx("div", { ref: bottomRef })] }), _jsx("div", { className: "border-t border-border flex-shrink-0", children: _jsx("div", { className: "p-3", children: _jsx("div", { className: "bg-[#1b1513] border border-border rounded-lg focus-within:border-[#b8935a] focus-within:shadow-[0_0_0_1.5px_rgba(184,147,90,0.35)] transition-colors", children: _jsxs("div", { className: "flex flex-col", children: [_jsx("textarea", { ref: inputRef, rows: 3, className: "w-full bg-transparent px-3 pt-2.5 pb-1 text-sm leading-relaxed outline-none resize-none placeholder:text-[#6b5f58] min-h-[80px]", style: { maxHeight: MAX_TEXTAREA_HEIGHT }, onKeyDown: handleKeyDown, onInput: autoResize, placeholder: streaming ? "Response streaming… (you can keep typing)" : "Ask about your code..." }), _jsxs("div", { className: "flex items-center justify-between gap-2 px-3 py-2 bg-[#1b1513] border-t border-border", children: [_jsx(ModelSelector, { onChange: setModel, disabled: streaming, apiUrl: apiUrl }), streaming ? (_jsx("button", { onClick: onCancel, title: "Stop generating", className: "bg-[#2b2b2b] text-[#f1e4d9] px-3 py-1.5 rounded-md text-xs hover:bg-[#3a3a3a] transition-colors flex-shrink-0", children: "\u25A0 Stop" })) : (_jsx("button", { onClick: handleSend, className: "bg-[#6e2a3a] text-[#f1e4d9] px-4 py-1.5 rounded-md text-xs hover:bg-[#7d3244] transition-colors flex-shrink-0", children: "Send" }))] })] }) }) }) })] }));
 }

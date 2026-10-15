@@ -14,7 +14,8 @@ class _OpenAICompatibleLLM(ChatOpenAI):
         api_key: str,
         base_url: str = "https://integrate.api.nvidia.com/v1",
         model: str = "nvidia/nemotron-3.5-lightning-30b-a3b",
-        timeout: int = 30,
+        timeout: int = 120,
+        max_retries: int = 3,
         **kwargs: Any,
     ):
         super().__init__(
@@ -22,6 +23,7 @@ class _OpenAICompatibleLLM(ChatOpenAI):
             base_url=base_url,
             api_key=api_key,
             timeout=timeout,
+            max_retries=max_retries,
             **kwargs,
         )
 
@@ -128,10 +130,8 @@ def get_llm(
             api_key=key,
             base_url=cfg["base_url"],
             model=model or cfg["model"],
-            timeout=30,
+            timeout=300,
             extra_body=cfg.get("extra_body", {}),
-
-           stream_chunk_timeout=None,
         )
 
     if provider == "gemini":
@@ -152,7 +152,7 @@ def get_llm(
         api_key=api_key,
         base_url=cfg["base_url"],
         model=model or cfg["model"],
-        stream_chunk_timeout=None,
+        timeout=300,
     )
 
 
