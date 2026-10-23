@@ -22,14 +22,23 @@ _BLOCKED_FILE_NAMES = {".env", ".env.local", ".env.production", ".env.developmen
 def _resolve_repo_path(relative_path: str) -> Path:
     repo_root = _ACTIVE_REPO_ROOT.get()
     requested = Path(relative_path)
-    if requested.is_absolute():
-        raise ValueError("path must be relative to the repository root")
-
-    resolved = (repo_root / requested).resolve()
-    try:
-        resolved.relative_to(repo_root)
-    except ValueError as exc:
-        raise ValueError("path must stay inside the repository") from exc
+    if requested.is_absolute() or requested.drive:
+        # Accept a copied/absolute path as long as it stays inside the
+        # workspace — otherwise the agent burns an extra LLM round trying to
+        # "convert" it, and each round is expensive.
+        try:
+            resolved = requested.resolve()
+            resolved.relative_to(repo_root)
+        except ValueError as exc:
+            raise ValueError(
+                f"path must be inside the workspace ({repo_root})"
+            ) from exc
+    else:
+        resolved = (repo_root / requested).resolve()
+        try:
+            resolved.relative_to(repo_root)
+        except ValueError as exc:
+            raise ValueError("path must stay inside the repository") from exc
 
     if any(part in _IGNORED_DIRECTORIES for part in resolved.relative_to(repo_root).parts):
         raise ValueError("path points to an ignored repository directory")
