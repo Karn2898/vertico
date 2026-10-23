@@ -86,7 +86,9 @@ _PROVIDERS = {
         },
         "requires_key": False,
         "extra_body": {
-            "chat_template_kwargs": {"enable_thinking": True},
+            # Hidden reasoning tokens made every round-trip take ~4.5 minutes;
+            # tool-calling works fine (and far faster) without them.
+            "chat_template_kwargs": {"enable_thinking": False},
         },
     },
     "openai": {
