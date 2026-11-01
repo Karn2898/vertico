@@ -52,7 +52,7 @@ class NodeExecutor(BaseExecutor):
         return self._run_subprocess(code, timeout)
 
     def _validate_writes(self, code: str) -> str | None:
-        ""Return a policy error message if code writes outside ALLOWED_WRITE_PATHS."""
+        """Return a policy error message if code writes outside ALLOWED_WRITE_PATHS."""""
         import re
         write_pattern = re.compile(
             r"(?:writeFile|createWriteStream|openSync)\s*\(\s*['\"]([^'\"]+)['\"]",

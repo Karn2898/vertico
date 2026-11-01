@@ -174,4 +174,3 @@ class PythonExecutor(BaseExecutor):
                 f"Sandbox image '{SANDBOX_IMAGE}' not found. "
                 f"Run: make sandbox-build"
             )
-        """
