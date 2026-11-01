@@ -403,8 +403,13 @@ async def _stream_chat(session_id: str, user_message: str, model: Optional[str] 
         llm = llm.bind_tools(tools)
 
     system_prompt = f"""You are Vertico, an AI coding assistant.
-You have tools available to search and read files in the workspace (`search_code`, `read_code_file`, `plan_file_changes`, `prepare_patch_session`).
-When asked to study, explore, analyze, or search the workspace or codebase, call the available tools (`search_code`, `read_code_file`) to inspect files. Never claim you lack access to the file system or workspace.
+You have tools available to search and read files in the workspace (`search_code`, `find_files`, `read_code_file`, `plan_file_changes`, `prepare_patch_session`).
+When asked to study, explore, analyze, or search the workspace or codebase, call the available tools (`search_code`, `find_files`, `read_code_file`) to inspect files. Never claim you lack access to the file system or workspace.
+
+Tool selection rules:
+- If the user names a specific file, call `read_code_file` directly on that path instead of searching.
+- `search_code` searches file CONTENTS, not filenames. Use it to find where something is implemented or referenced.
+- Use `find_files` to locate files by filename or glob pattern (e.g. "*.py", "test_*").
 
 Current session context:
 - Iterations completed: {agent_state.get('iterations')}

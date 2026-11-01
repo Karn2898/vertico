@@ -51,6 +51,9 @@ def readiness_check():
 
     checks["api_key"] = "ok" if os.environ.get("NVIDIA_API_KEY") else "missing"
 
+    sandbox = _sandbox_status()
+    checks["sandbox"] = "ok" if sandbox["sandboxed"] else "degraded"
+
     try:
         from ..services.session_service import sessions
         checks["sessions_store"] = "ok" if sessions is not None else "missing"
@@ -68,6 +71,7 @@ def readiness_check():
     return {
         "status": "ready" if all_ok else "degraded",
         "checks": checks,
+        "sandbox": sandbox,
         "timestamp": datetime.utcnow().isoformat(),
         "python": sys.version,
     }
@@ -92,10 +96,30 @@ def graph_check():
         }
 
 
-try:
-    from sandbox.executors.python_executor import PythonExecutor
-    ex = PythonExecutor()
-    result = ex.run("print('ok')", timeout=5)
-    _sandbox_status = "ok" if result.success else f"error: {result.stderr}"
-except Exception as e:
-    _sandbox_status = f"error: {str(e)}"
+def _sandbox_status() -> dict:
+    """Report which execution mode is active and whether the sandbox image is usable."""
+    try:
+        from sandbox.executors.python_executor import PythonExecutor
+        executor = PythonExecutor()
+        if not executor.sandbox_enabled:
+            return {
+                "mode": "subprocess-fallback",
+                "sandboxed": False,
+                "warning": (
+                    "running UNSANDBOXED via plain subprocess fallback — "
+                    "set SANDBOX_ENABLED=true and build the sandbox image"
+                ),
+            }
+        result = executor.run("print('ok')", timeout=5)
+        return {
+            "mode": "docker-sandbox",
+            "sandboxed": True,
+            "status": "ok" if result.success else f"error: {result.stderr}",
+        }
+    except Exception as e:
+        return {"mode": "subprocess-fallback", "sandboxed": False, "error": str(e)}
+
+
+@router.get("/sandbox")
+def sandbox_check():
+    return {**_sandbox_status(), "timestamp": datetime.utcnow().isoformat()}
