@@ -82,12 +82,14 @@ from .routes import agent as agent_routes
 from .routes import chat as chat_routes
 from .routes import diffs as diffs_routes
 from .routes import patches as patches_routes
+from .routes import tool_approvals as tool_approvals_routes
 
 app.include_router(session_routes.router)
 app.include_router(agent_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(diffs_routes.router)
 app.include_router(patches_routes.router)
+app.include_router(tool_approvals_routes.router)
 
 app.add_middleware(
     CORSMiddleware,
