@@ -6,7 +6,14 @@ import docker
 from docker.errors import ContainerError, ImageNotFound
 
 from .base import BaseExecutor, ExecutionResult
-from ..policies.limit import RESOURCE_LIMITS, TIMEOUTS, MAX_OUTPUT_BYTES
+from ..policies.limit import (
+    RESOURCE_LIMITS,
+    TIMEOUTS,
+    MAX_OUTPUT_BYTES,
+    ALLOWED_WRITE_PATHS,
+    BLOCKED_COMMANDS,
+    validate_code_against_policy,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +34,50 @@ class PythonExecutor(BaseExecutor):
                 logger.warning(f"Docker unavailable, falling back to subprocess: {e}")
                 self.sandbox_enabled = False
                 self.client = None
+        else:
+            logger.warning(
+                "SANDBOX_ENABLED=false: PythonExecutor running UNSANDBOXED "
+                "via plain subprocess fallback. Set SANDBOX_ENABLED=true "
+                "and build the sandbox image for isolated execution."
+            )
 
     def run(self, code: str, timeout: int = None) -> ExecutionResult:
         timeout = timeout or TIMEOUTS["python"]
+        try:
+            validate_code_against_policy(code)
+        except ValueError as exc:
+            return ExecutionResult(
+                stdout="",
+                stderr=f"[policy] {exc}",
+                exit_code=1,
+                sandbox_enabled=self.sandbox_enabled,
+            )
         if self.sandbox_enabled:
             return self._run_sandboxed(code, timeout)
         return self._run_subprocess(code, timeout)
 
+    def _validate_writes(self, code: str) -> str | None:
+        """Return a policy error message if code writes outside ALLOWED_WRITE_PATHS."""
+        import re
+        open_pattern = re.compile(
+            r"open\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]?([wax]+)['\"]?",
+        )
+        for match in open_pattern.finditer(code):
+            target = match.group(1)
+            if not any(target.startswith(p) for p in ALLOWED_WRITE_PATHS):
+                return f"write target outside allowed paths {ALLOWED_WRITE_PATHS}: {target}"
+        return None
+
 
     def _run_sandboxed(self, code: str, timeout: int) -> ExecutionResult:
+        write_violation = self._validate_writes(code)
+        if write_violation:
+            return ExecutionResult(
+                stdout="",
+                stderr=f"[policy] {write_violation}",
+                exit_code=1,
+                sandbox_enabled=True,
+            )
         try:
             output = self.client.containers.run(
                 image=SANDBOX_IMAGE,   
@@ -92,6 +134,14 @@ class PythonExecutor(BaseExecutor):
     # --- Subprocess (dev) ---
 
     def _run_subprocess(self, code: str, timeout: int) -> ExecutionResult:
+        write_violation = self._validate_writes(code)
+        if write_violation:
+            return ExecutionResult(
+                stdout="",
+                stderr=f"[policy] {write_violation}",
+                exit_code=1,
+                sandbox_enabled=False,
+            )
         logger.warning("Running code WITHOUT sandbox — dev mode only")
         try:
             result = subprocess.run(
@@ -116,7 +166,7 @@ class PythonExecutor(BaseExecutor):
             )
 
     def _ensure_image(self):
-        """Check sandbox image exists — fail loud on startup if missing."""
+        """Check sandbox image exists - fail loud on startup if missing."""
         try:
             self.client.images.get(SANDBOX_IMAGE)
         except ImageNotFound:
@@ -124,3 +174,4 @@ class PythonExecutor(BaseExecutor):
                 f"Sandbox image '{SANDBOX_IMAGE}' not found. "
                 f"Run: make sandbox-build"
             )
+        """
