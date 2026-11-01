@@ -26,3 +26,6 @@ apps/api/apps/ide-extension/out/
 *.vsix
 dist/
 build/
+
+# Vertico agent artifacts
+.vertico/
